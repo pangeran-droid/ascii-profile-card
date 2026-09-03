@@ -251,6 +251,11 @@ and reports stats as `N/A`.
         └── generate-card.yml   # daily/on-push workflow
 ```
 
+## Showcase
+
+Made something cool with this template? Add yourself to the [gallery](GALLERY.md) — see
+[CONTRIBUTING.md](CONTRIBUTING.md) for how.
+
 ## License
 
 MIT — use, modify, and share freely. A credit back to this repo is appreciated but not required.

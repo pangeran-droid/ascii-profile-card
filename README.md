@@ -4,6 +4,9 @@
   <img src="https://img.shields.io/badge/Python-3.12+-5dc9f2?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/github/actions/workflow/status/pangeran-droid/ascii-profile-card/generate-card.yml?style=flat-square&label=build&logo=github" alt="Build">
   <img src="https://img.shields.io/github/license/pangeran-droid/ascii-profile-card?style=flat-square&color=e8384f" alt="License">
+  <img src="https://img.shields.io/github/stars/pangeran-droid/ascii-profile-card?style=flat-square&color=ffd166&logo=github" alt="Stars">
+  <img src="https://img.shields.io/github/forks/pangeran-droid/ascii-profile-card?style=flat-square&color=4d8cff&logo=github" alt="Forks">
+  <img src="https://img.shields.io/badge/PRs-welcome-3ddc84?style=flat-square&logo=github" alt="PRs Welcome">
 </p>
 
 <p align="center">A Kali-Linux-terminal-styled Neofetch profile card generator for your GitHub README. It converts your

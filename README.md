@@ -19,7 +19,7 @@ a typing prompt, and pulls in live GitHub stats — all rendered as a single sel
 <summary>ascii-profile-card v2</summary>
 <br>
 
-<img src="assets/profile_v2.svg" alt="Example card V2">
+<img src="https://raw.githubusercontent.com/pangeran-droid/ascii-profile-card/refs/heads/main/assets/profile_v2.svg" alt="Example card V2">
 
 </details>
 

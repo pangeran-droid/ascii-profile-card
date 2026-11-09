@@ -1,0 +1,1106 @@
+<!--
+ASCII Card Studio
+Developed by GitHub user @pangeran-droid — github.com/pangeran-droid
+Part of the ascii-profile-card repository.
+-->
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ASCII Card Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Layout: two-pane workbench -- a scrollable control rail feeds a sticky
+     terminal-card preview; under 860px the preview floats to the top and
+     the rail drops below it so the result is always the first thing seen. */
+  :root{
+    --bg: #080b14;
+    --panel: #10182b;
+    --panel-2: #0c1223;
+    --border: #202c47;
+    --border-soft: #182038;
+    --fg: #e8edf8;
+    --muted: #8a96b8;
+    --muted-2: #5c6788;
+    --accent: #5dc9f2;
+    --accent-soft: rgba(93,201,242,.14);
+    --danger: #ef4b61;
+    --ok: #3ddc84;
+    --warn: #ffd166;
+    --font-display: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    --font-body: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  body{
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(93,201,242,.08), transparent 60%),
+      var(--bg);
+    color:var(--fg);
+    font-family:var(--font-body);
+    padding-inline:16px;
+    min-height:100%;
+  }
+  ::selection{background:var(--accent-soft);color:var(--fg)}
+  h1,h2,h3{font-family:var(--font-display);font-weight:600;letter-spacing:.01em;margin:0}
+  a{color:var(--accent)}
+  .app{max-width:1280px;margin:0 auto;padding-block:20px 56px}
+
+  .topbar{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:14px 18px;border:1px solid var(--border);border-radius:14px;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    margin-bottom:20px;
+  }
+  .topbar .dots{display:flex;gap:7px;flex:0 0 auto}
+  .topbar .dot{width:11px;height:11px;border-radius:50%}
+  .topbar .dot.r{background:#ff5f57}.topbar .dot.y{background:#febc2e}.topbar .dot.g{background:#28c840}
+  .topbar .titles{flex:1 1 auto;min-width:0}
+  .topbar h1{font-size:17px;color:var(--fg)}
+  .topbar p{margin:2px 0 0;font-size:12.5px;color:var(--muted);max-width:60ch}
+  .topbar .actions{display:flex;gap:8px;flex:0 0 auto}
+
+  .btn{
+    font-family:var(--font-display);font-size:12.5px;font-weight:600;letter-spacing:.02em;
+    color:var(--fg);background:var(--panel-2);border:1px solid var(--border);
+    border-radius:8px;padding:8px 12px;cursor:pointer;white-space:nowrap;
+    transition:border-color .15s,background .15s,transform .05s;
+  }
+  .btn:hover{border-color:var(--accent);background:#0e1730}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .btn.primary{background:var(--accent);color:#06121c;border-color:var(--accent)}
+  .btn.primary:hover{background:#7ad4f5}
+  .btn.ghost{background:transparent}
+  .btn.danger{color:var(--danger);border-color:rgba(239,75,97,.4)}
+  .btn.small{padding:5px 9px;font-size:11px;border-radius:6px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+
+  .grid{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:20px;align-items:start}
+  @media (max-width:860px){ .grid{grid-template-columns:1fr} }
+  .rail{order:1;display:flex;flex-direction:column;gap:14px;min-width:0}
+  .stage{order:2;position:sticky;top:16px;min-width:0}
+  @media (max-width:860px){
+    .rail{order:2}
+    .stage{order:1;position:static}
+  }
+
+  .card{
+    border:1px solid var(--border);border-radius:14px;background:var(--panel);
+    overflow:hidden;
+  }
+  .card > summary, .card > .card-head{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:12px 14px;cursor:pointer;list-style:none;user-select:none;
+  }
+  .card > summary::-webkit-details-marker{display:none}
+  .card-head h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--fg)}
+  .card-head .hint{font-size:11px;color:var(--muted-2);font-family:var(--font-mono)}
+  .chev{color:var(--muted);transition:transform .15s;flex:0 0 auto}
+  details[open] > summary .chev{transform:rotate(90deg)}
+  .card-body{padding:4px 14px 14px;display:flex;flex-direction:column;gap:10px}
+
+  label.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+  label.field .lbl{font-size:11px;color:var(--muted);font-family:var(--font-mono);letter-spacing:.02em}
+  input[type=text], input[type=password], textarea{
+    font-family:var(--font-mono);font-size:12.5px;color:var(--fg);
+    background:var(--panel-2);border:1px solid var(--border-soft);border-radius:7px;
+    padding:7px 9px;width:100%;min-width:0;
+  }
+  input[type=text]:focus, input[type=password]:focus, textarea:focus{
+    outline:none;border-color:var(--accent);
+  }
+  textarea{resize:vertical;line-height:1.5}
+  .row{display:flex;gap:8px;align-items:center;min-width:0}
+  .row > *{min-width:0}
+  .grow{flex:1 1 auto}
+
+  .listitem{
+    display:flex;gap:7px;align-items:center;padding:7px;border:1px solid var(--border-soft);
+    border-radius:8px;background:var(--panel-2);
+  }
+  .listitem input[type=text]{background:var(--panel)}
+  .iconbtn{
+    flex:0 0 auto;width:26px;height:26px;display:grid;place-items:center;border-radius:6px;
+    border:1px solid var(--border-soft);background:var(--panel);color:var(--muted);cursor:pointer;
+  }
+  .iconbtn:hover{color:var(--danger);border-color:rgba(239,75,97,.4)}
+
+  .colorrow{display:flex;align-items:center;gap:8px}
+  .colorrow .swatchpick{flex:0 0 auto;width:30px;height:30px;border-radius:7px;border:1px solid var(--border-soft);padding:0;background:none;cursor:pointer}
+  .colorrow .name{flex:0 0 108px;font-size:12px;color:var(--muted);font-family:var(--font-mono)}
+  .colorrow input[type=text]{flex:1 1 auto}
+  .palettegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .palettegrid .swatchpick{width:100%;aspect-ratio:1;border-radius:8px;border:1px solid var(--border-soft);cursor:pointer}
+
+  .dropzone{
+    border:1.5px dashed var(--border-soft);border-radius:10px;padding:14px;text-align:center;
+    color:var(--muted);font-size:12px;cursor:pointer;background:var(--panel-2);
+  }
+  .dropzone:hover{border-color:var(--accent);color:var(--fg)}
+  .dropzone.drag{border-color:var(--accent);background:var(--accent-soft)}
+  .avatarpreview{display:flex;align-items:center;gap:10px}
+  .avatarpreview img{width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border-soft)}
+  .statustext{font-size:11px;color:var(--muted-2);font-family:var(--font-mono);min-height:14px}
+  .statustext.ok{color:var(--ok)}
+  .statustext.err{color:var(--danger)}
+
+  .stagecard{border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden}
+  .stagehead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
+  .stagehead h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.08em}
+  .dims{font-size:11px;color:var(--muted-2);font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+  .stagebody{padding:18px;overflow:auto;background:
+    radial-gradient(circle at 1px 1px, var(--border-soft) 1px, transparent 0) 0 0/16px 16px;
+  }
+  .stagebody svg{display:block;max-width:100%;height:auto;margin-inline:auto;filter:drop-shadow(0 20px 40px rgba(0,0,0,.45))}
+
+  .exporttabs{display:flex;gap:6px;padding:10px 14px 0;flex-wrap:wrap}
+  .exporttab{
+    font-family:var(--font-display);font-size:11.5px;font-weight:600;color:var(--muted);
+    background:transparent;border:1px solid var(--border-soft);border-radius:7px;padding:6px 10px;cursor:pointer;
+  }
+  .exporttab.active{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+  .exportpane{display:none;padding:12px 14px 14px;flex-direction:column;gap:8px}
+  .exportpane.active{display:flex}
+  .exportpane textarea{height:150px;font-size:11.5px}
+  .exportpane p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.5}
+  .exportpane .row{justify-content:flex-end}
+
+  code.inline{font-family:var(--font-mono);background:var(--panel-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;font-size:11.5px}
+  .foot{margin-top:18px;font-size:11.5px;color:var(--muted-2);line-height:1.6;text-align:center}
+  .foot a{color:var(--muted)}
+
+  .guide{border-color:var(--accent);background:linear-gradient(180deg,rgba(93,201,242,.08),var(--panel-2))}
+  .guide ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:var(--fg);line-height:1.55}
+  .guide ol b{color:var(--accent);font-family:var(--font-mono)}
+  .guide .note{margin-top:4px;font-size:11.5px;color:var(--muted);background:var(--panel-2);border:1px solid var(--border-soft);border-radius:8px;padding:8px 10px;line-height:1.55}
+
+  .fieldgrid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:420px){ .fieldgrid2{grid-template-columns:1fr} }
+  label.field input[type=number]{
+    font-family:var(--font-mono);font-size:12.5px;color:var(--fg);
+    background:var(--panel-2);border:1px solid var(--border-soft);border-radius:7px;
+    padding:7px 9px;width:100%;
+  }
+  label.field input[type=number]:focus{outline:none;border-color:var(--accent)}
+  label.field input[type=range]{width:100%;accent-color:var(--accent)}
+  .rangeval{font-family:var(--font-mono);font-size:11px;color:var(--accent);font-variant-numeric:tabular-nums}
+  .helptext{font-size:11px;color:var(--muted-2);line-height:1.5;margin:0}
+</style>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+    <div class="titles">
+      <h1>ASCII Card Studio - v1.0</h1>
+      <p>Visually design the Kali-styled README card, then copy the config straight back into <code class="inline">profile.svg</code>'s generator script.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnReset" type="button">Reset defaults</button>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="rail">
+
+      <details class="card guide" open>
+        <summary class="card-head"><h2>Quick guide</h2><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+        <div class="card-body">
+        <ol>
+          <li>Configure each panel below — <i>Identity</i>, <i>GitHub Stats</i>, <i>Profile Fields</i>, <i>Terminal Prompt</i>, <i>Color Palette</i>, and <i>ASCII &amp; Animations</i>. The preview on the right (or above, on narrower screens) updates in real-time as you type.</li>
+          <li>Once you’re satisfied, open the <b>Python snippet</b> tab below the preview and click <b>Copy snippet</b>.</li>
+          <li>Paste the copied content into the top of your <code class="inline">scripts/generate_card.py</code> file, overwriting the existing <code class="inline">PROFILE_FIELDS</code>, <code class="inline">PROMPT_COMMANDS</code>, and the color/size constants.</li>
+          <li>Commit and push your changes. The existing GitHub Actions workflow will automatically re-render <code class="inline">assets/profile.svg</code> — no further changes to the workflow are required.</li>
+        </ol>
+          <div class="note">All processes on this page run entirely within your own browser—nothing is uploaded to any server. You can save your progress at any time via the <b>Save/load config</b> tab below the preview.</div>
+        </div>
+      </details>
+
+      <details class="card" open>
+        <summary class="card-head"><h2>Identity</h2><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+        <div class="card-body">
+          <label class="field">
+            <span class="lbl">GITHUB_LOGIN</span>
+            <input type="text" id="inpLogin" value="kali" spellcheck="false">
+          </label>
+
+          <label class="field">
+            <span class="lbl">Avatar image</span>
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload avatar image">
+              Click to choose an image, or drag one here<br>— square-cropped and converted to ASCII art
+            </div>
+            <input type="file" id="inpAvatar" accept="image/*" hidden>
+          </label>
+          <div class="avatarpreview" id="avatarPreviewRow" hidden>
+            <img id="avatarThumb" alt="">
+            <div class="grow">
+              <div style="font-size:12px">Avatar set</div>
+              <div class="statustext" id="avatarStatus"></div>
+            </div>
+            <button class="btn small danger" id="btnRemoveAvatar" type="button">Remove</button>
+          </div>
+          <div class="row" id="rerollRow">
+            <span class="statustext grow" id="dragonStatus">No avatar — using the procedural dragon glyph.</span>
+            <button class="btn small" id="btnReroll" type="button">Reroll art</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="card" open>
+        <summary class="card-head"><h2>GitHub stats</h2><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+        <div class="card-body">
+          <label class="field">
+            <span class="lbl">GITHUB_TOKEN (optional, read-only scope)</span>
+            <input type="password" id="inpToken" placeholder="only used for a client-side fetch, never stored" spellcheck="false">
+          </label>
+          <div class="row">
+            <button class="btn grow" id="btnFetchStats" type="button">Fetch live stats</button>
+          </div>
+          <div class="statustext" id="statsStatus">Repos / Stars / Followers / Languages fill in below on fetch. Contributions is best entered by hand — the contributions API needs a server-side call.</div>
+        </div>
+      </details>
+
+      <details class="card" open>
+        <summary class="card-head"><h2>Profile fields</h2><span class="hint" id="fieldsCount"></span></summary>
+        <div class="card-body">
+          <div id="fieldsList" style="display:flex;flex-direction:column;gap:7px"></div>
+          <button class="btn small" id="btnAddField" type="button">+ Add field</button>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary class="card-head"><h2>Terminal prompt</h2><span class="hint" id="promptCount"></span></summary>
+        <div class="card-body">
+          <p style="margin:0;font-size:11.5px;color:var(--muted)">Each line is typed, held, then deleted in the looping terminal prompt.</p>
+          <div id="promptList" style="display:flex;flex-direction:column;gap:7px"></div>
+          <button class="btn small" id="btnAddPrompt" type="button">+ Add line</button>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary class="card-head"><h2>Palette</h2></summary>
+        <div class="card-body">
+          <div class="colorrow"><span class="name">Window bg</span><input type="color" class="swatchpick" id="pickBg"><input type="text" class="grow" id="textBg"></div>
+          <div class="colorrow"><span class="name">Title bar</span><input type="color" class="swatchpick" id="pickTitlebar"><input type="text" class="grow" id="textTitlebar"></div>
+          <div class="colorrow"><span class="name">Title text</span><input type="color" class="swatchpick" id="pickTitleText"><input type="text" class="grow" id="textTitleText"></div>
+          <div class="colorrow"><span class="name">ASCII art</span><input type="color" class="swatchpick" id="pickAccent"><input type="text" class="grow" id="textAccent"></div>
+          <div class="colorrow"><span class="name">Header / prompt</span><input type="color" class="swatchpick" id="pickHeader"><input type="text" class="grow" id="textHeader"></div>
+          <div class="colorrow"><span class="name">Field labels</span><input type="color" class="swatchpick" id="pickLabel"><input type="text" class="grow" id="textLabel"></div>
+          <div class="colorrow"><span class="name">Field values</span><input type="color" class="swatchpick" id="pickValue"><input type="text" class="grow" id="textValue"></div>
+          <span class="lbl" style="margin-top:4px">Swatch row (8)</span>
+          <div class="palettegrid" id="paletteGrid"></div>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary class="card-head"><h2>ASCII &amp; animation</h2><span class="hint">ART_COLS &amp; PROMPT_*</span></summary>
+        <div class="card-body">
+          <label class="field">
+            <span class="lbl">ART_COLS — ASCII art width (in characters)</span>
+            <div class="row">
+              <input type="range" id="rngArtCols" min="20" max="60" step="1" class="grow">
+              <span class="rangeval" id="valArtCols">40</span>
+            </div>
+            <p class="helptext">A higher value results in a more detailed avatar/dragon, but makes the card wider.</p>
+          </label>
+
+          <div class="fieldgrid2">
+            <label class="field">
+              <span class="lbl">Typing speed (seconds/character)</span>
+              <input type="number" id="inpTypeSpeed" min="0.01" max="1" step="0.01">
+            </label>
+            <label class="field">
+              <span class="lbl">Deleting speed (seconds/character)</span>
+              <input type="number" id="inpDeleteSpeed" min="0.01" max="1" step="0.005">
+            </label>
+            <label class="field">
+              <span class="lbl">Pause after typing finishes (seconds)</span>
+              <input type="number" id="inpHoldTime" min="0" max="10" step="0.1">
+            </label>
+            <label class="field">
+              <span class="lbl">Pause before the next line (seconds)</span>
+              <input type="number" id="inpGapTime" min="0" max="10" step="0.1">
+            </label>
+          </div>
+          <p class="helptext">These values ​​correspond exactly to <code class="inline">ART_COLS</code>, <code class="inline">PROMPT_TYPE_SPEED</code>, <code class="inline">PROMPT_DELETE_SPEED</code>, <code class="inline">PROMPT_HOLD_TIME</code>, and <code class="inline">PROMPT_GAP_TIME</code> in the Python script—changing them here will also update them in the Python snippet tab.</p>
+        </div>
+      </details>
+
+      <div class="foot">Everything here runs in your browser — nothing is uploaded. The token field is only used for one direct call to the GitHub API.</div>
+    </div>
+
+    <div class="stage">
+      <div class="stagecard">
+        <div class="stagehead">
+          <h2>Live preview</h2>
+          <span class="dims" id="dimsText">— × —</span>
+        </div>
+        <div class="stagebody">
+          <div id="svgHost"></div>
+        </div>
+        <div class="exporttabs">
+          <button class="exporttab active" data-pane="python" type="button">Python snippet</button>
+          <button class="exporttab" data-pane="svg" type="button">SVG markup</button>
+          <button class="exporttab" data-pane="config" type="button">Save / load config</button>
+        </div>
+
+        <div class="exportpane active" data-pane="python">
+          <p>Drop this into the script in place of <code class="inline">PROFILE_FIELDS</code>, <code class="inline">PROMPT_COMMANDS</code>, and the color constants.</p>
+          <textarea id="outPython" readonly spellcheck="false"></textarea>
+          <div class="row"><button class="btn small" id="btnCopyPython" type="button">Copy snippet</button></div>
+        </div>
+
+        <div class="exportpane" data-pane="svg">
+          <p>Download links can't trigger a save from inside this preview — copy the markup, or open it in a new tab and use the browser's "Save As".</p>
+          <textarea id="outSvg" readonly spellcheck="false"></textarea>
+          <div class="row">
+            <a class="btn small ghost" id="linkOpenSvg" target="_blank" rel="noopener">Open in new tab</a>
+            <button class="btn small" id="btnCopySvg" type="button">Copy markup</button>
+          </div>
+        </div>
+
+        <div class="exportpane" data-pane="config">
+          <p>Save your in-progress design to come back to later, including the avatar.</p>
+          <textarea id="outConfig" readonly spellcheck="false"></textarea>
+          <div class="row">
+            <label class="btn small ghost" style="cursor:pointer">Load file<input type="file" id="inpConfigFile" accept="application/json" hidden></label>
+            <button class="btn small" id="btnCopyConfig" type="button">Copy JSON</button>
+          </div>
+          <label class="field">
+            <span class="lbl">…or paste config JSON here and apply</span>
+            <textarea id="inpConfigPaste" placeholder="{ &quot;login&quot;: ... }" spellcheck="false" style="height:70px"></textarea>
+          </label>
+          <div class="row"><button class="btn small" id="btnApplyConfig" type="button">Apply pasted config</button></div>
+          <div class="statustext" id="configStatus"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- constants ported from the Python generator -------------------------
+  var RAMP = " .:+#@";
+  var CELL_W = 8.4, CELL_H = 15.0, ART_COLS = 40, TITLEBAR_H = 34;
+  var PROMPT_TYPE_SPEED = 0.08, PROMPT_DELETE_SPEED = 0.045,
+      PROMPT_HOLD_TIME = 1.1, PROMPT_GAP_TIME = 0.4, PROMPT_CHAR_W = 9.0;
+
+  function xmlEscape(s){
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  }
+  function pyStr(s){ return '"' + String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"') + '"'; }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function mod(a,n){ return ((a % n) + n) % n; }
+
+  // ---- default state --------------------------------------------------------
+  function defaultState(){
+    return {
+      login: "kali",
+      fields: [
+        ["Role", "informatics student"],
+        ["Focus", "junior web developer & cybersecurity enthusiast"],
+        ["Stack.Frontend", "html, css, javascript"],
+        ["Stack.Backend", "php, laravel, codeigniter"],
+        ["Stack.Scripting", "python"],
+        ["Stack.Database", "mysql"],
+        ["Stack.Security", "burp suite"],
+        ["Environment", "linux, git, github, vscode"],
+        ["Interests", "cybersecurity"],
+        ["Contact.GitHub", "github.com/kali"],
+        ["Contact.Telegram", "t.me/pangeran1337"],
+        ["GitHub.Repos", "N/A"],
+        ["GitHub.Stars", "N/A"],
+        ["GitHub.Followers", "N/A"],
+        ["GitHub.Languages", "N/A"],
+        ["GitHub.Contributions", "N/A"]
+      ],
+      promptCommands: ["informatics student", "junior web developer", "cybersecurity enthusiast"],
+      colors: {
+        bg: "#0b1120", titlebar: "#141c30", titleText: "#7f8aa6",
+        accent: "#5dc9f2", header: "#e8384f", label: "#ffffff", value: "#5dc9f2",
+        palette: ["#0b1120", "#e8384f", "#3ddc84", "#ffd166", "#4d8cff", "#b16cff", "#39e0d0", "#e8e8e8"]
+      },
+      advanced: {
+        artCols: 40,
+        typeSpeed: 0.08,
+        deleteSpeed: 0.045,
+        holdTime: 1.1,
+        gapTime: 0.4,
+        charW: 9.0
+      },
+      avatarDataUrl: null
+    };
+  }
+  var state = defaultState();
+  var artRows = [];
+  var avatarImgEl = null; // cached <img> so ART_COLS changes can re-sample without a re-upload
+
+  function syncAdvancedGlobals(){
+    ART_COLS = clamp(Math.round(state.advanced.artCols) || 40, 10, 120);
+    PROMPT_TYPE_SPEED = state.advanced.typeSpeed > 0 ? state.advanced.typeSpeed : 0.08;
+    PROMPT_DELETE_SPEED = state.advanced.deleteSpeed > 0 ? state.advanced.deleteSpeed : 0.045;
+    PROMPT_HOLD_TIME = Math.max(0, state.advanced.holdTime);
+    PROMPT_GAP_TIME = Math.max(0, state.advanced.gapTime);
+    PROMPT_CHAR_W = Math.max(0, state.advanced.charW);
+  }
+
+  // ---- procedural dragon art (used when no avatar is set) -------------------
+  function asciiRowsDragon(){
+    var rowsN = Math.max(1, Math.round(ART_COLS * (CELL_W / CELL_H)));
+    var midChars = ":;.";
+    function inDragon(x, y){
+      var nx = (x - ART_COLS * 0.42) / (ART_COLS / 2);
+      var ny = (y - rowsN * 0.5) / (rowsN / 2);
+      var r = Math.sqrt(nx*nx + ny*ny);
+      var theta = (nx * 3.4 + ny * 2.1);
+      var spiral = Math.abs(mod(r * 5.0 - theta, 2.0) - 1.0) < 0.22;
+      return spiral && r < 0.9;
+    }
+    var out = [];
+    for (var y = 0; y < rowsN; y++){
+      var line = "";
+      for (var x = 0; x < ART_COLS; x++){
+        if (inDragon(x, y)) line += (Math.random() < 0.12) ? " " : midChars[Math.floor(Math.random()*midChars.length)];
+        else line += " ";
+      }
+      out.push(line);
+    }
+    return out;
+  }
+
+  // ---- avatar -> ASCII art via canvas ---------------------------------------
+  function asciiRowsFromImage(img){
+    return new Promise(function(resolve){
+      var w = img.naturalWidth, h = img.naturalHeight;
+      var side = Math.min(w, h);
+      var left = Math.floor((w - side) / 2), top = Math.floor((h - side) / 2);
+      var cap = 420;
+      var scale = side > cap ? cap / side : 1;
+      var outSide = Math.max(1, Math.round(side * scale));
+
+      var crop = document.createElement("canvas");
+      crop.width = outSide; crop.height = outSide;
+      var cctx = crop.getContext("2d");
+      cctx.drawImage(img, left, top, side, side, 0, 0, outSide, outSide);
+      var data = cctx.getImageData(0, 0, outSide, outSide).data;
+
+      var minAlpha = 255;
+      for (var i = 3; i < data.length; i += 4) if (data[i] < minAlpha) minAlpha = data[i];
+      var hasRealAlpha = minAlpha < 250;
+
+      var n = outSide * outSide;
+      var alphaArr = new Float32Array(n);
+      var grayArr = new Float32Array(n);
+
+      if (hasRealAlpha){
+        for (var p0 = 0, idx0 = 3; p0 < n; p0++, idx0 += 4) alphaArr[p0] = data[idx0];
+      } else {
+        var m = Math.max(2, Math.round(outSide * 0.05));
+        var rs = [], gs = [], bs = [];
+        function collect(x0,x1,y0,y1){
+          for (var y = y0; y < y1; y++) for (var x = x0; x < x1; x++){
+            var k = (y * outSide + x) * 4;
+            rs.push(data[k]); gs.push(data[k+1]); bs.push(data[k+2]);
+          }
+        }
+        collect(0, m, 0, m); collect(outSide-m, outSide, 0, m);
+        collect(0, m, outSide-m, outSide); collect(outSide-m, outSide, outSide-m, outSide);
+        function median(arr){ var s = arr.slice().sort(function(a,b){return a-b;}); var mid = Math.floor(s.length/2); return s.length % 2 ? s[mid] : (s[mid-1]+s[mid])/2; }
+        var br = median(rs), bgc = median(gs), bb = median(bs);
+        for (var y2 = 0; y2 < outSide; y2++) for (var x2 = 0; x2 < outSide; x2++){
+          var k2 = (y2*outSide+x2)*4;
+          var dr = data[k2]-br, dg = data[k2+1]-bgc, db = data[k2+2]-bb;
+          var dist = Math.sqrt(dr*dr+dg*dg+db*db);
+          alphaArr[y2*outSide+x2] = clamp((dist - 42.0) * 6.0, 0, 255);
+        }
+      }
+      for (var p1 = 0, idx1 = 0; p1 < n; p1++, idx1 += 4){
+        grayArr[p1] = data[idx1]*0.299 + data[idx1+1]*0.587 + data[idx1+2]*0.114;
+      }
+
+      var rowsN = Math.max(1, Math.round(ART_COLS * (CELL_W / CELL_H)));
+
+      function resizeChannel(arr){
+        var src = document.createElement("canvas");
+        src.width = outSide; src.height = outSide;
+        var sctx = src.getContext("2d");
+        var sdata = sctx.createImageData(outSide, outSide);
+        for (var q = 0; q < arr.length; q++){
+          var v = clamp(Math.round(arr[q]), 0, 255);
+          sdata.data[q*4] = v; sdata.data[q*4+1] = v; sdata.data[q*4+2] = v; sdata.data[q*4+3] = 255;
+        }
+        sctx.putImageData(sdata, 0, 0);
+        var dst = document.createElement("canvas");
+        dst.width = ART_COLS; dst.height = rowsN;
+        var dctx = dst.getContext("2d");
+        dctx.imageSmoothingEnabled = true;
+        try { dctx.imageSmoothingQuality = "high"; } catch(e){}
+        dctx.drawImage(src, 0, 0, outSide, outSide, 0, 0, ART_COLS, rowsN);
+        return dctx.getImageData(0, 0, ART_COLS, rowsN).data;
+      }
+
+      var alphaSmall = resizeChannel(alphaArr);
+      var graySmall = resizeChannel(grayArr);
+
+      var rows = [];
+      for (var ry = 0; ry < rowsN; ry++){
+        var line = "";
+        for (var rx = 0; rx < ART_COLS; rx++){
+          var pp = (ry*ART_COLS+rx)*4;
+          var fg = alphaSmall[pp] / 255.0;
+          if (fg < 0.22){ line += " "; continue; }
+          var lum = graySmall[pp] / 255.0;
+          var ci = Math.min(RAMP.length - 2, Math.floor(lum * (RAMP.length - 1)));
+          line += RAMP[ci];
+        }
+        rows.push(line);
+      }
+      resolve(rows);
+    });
+  }
+
+  // ---- terminal prompt typing animation (SVG) --------------------------------
+  function buildPromptTypingSvg(commands, x, y){
+    if (!commands.length) commands = [""];
+    var durations = commands.map(function(c){
+      var n = Math.max(1, c.length);
+      return n*PROMPT_TYPE_SPEED + PROMPT_HOLD_TIME + n*PROMPT_DELETE_SPEED + PROMPT_GAP_TIME;
+    });
+    var total = durations.reduce(function(a,b){return a+b;}, 0) || 1;
+    var maxW = Math.max.apply(null, commands.map(function(c){return c.length;})) * PROMPT_CHAR_W;
+
+    var keyframesCss = [], cursorStops = [], groupsSvg = [];
+    var t = 0;
+    commands.forEach(function(cmd, i){
+      var n = Math.max(1, cmd.length);
+      var fullW = n * PROMPT_CHAR_W;
+      var typeDur = n * PROMPT_TYPE_SPEED;
+      var deleteDur = n * PROMPT_DELETE_SPEED;
+      var tStart = t;
+      var tTypeEnd = tStart + typeDur;
+      var tHoldEnd = tTypeEnd + PROMPT_HOLD_TIME;
+      var tDeleteEnd = tHoldEnd + deleteDur;
+      t = tDeleteEnd + PROMPT_GAP_TIME;
+
+      function pct(sec){ return Math.round(clamp(sec/total*100, 0, 100) * 1000) / 1000; }
+
+      var stops = [
+        [0, 0, "steps(1, jump-end)"],
+        [pct(tStart), 0, "steps(" + n + ", jump-end)"],
+        [pct(tTypeEnd), fullW, "steps(1, jump-end)"],
+        [pct(tHoldEnd), fullW, "steps(" + n + ", jump-end)"],
+        [pct(tDeleteEnd), 0, "steps(1, jump-end)"],
+        [100, 0, "steps(1, jump-end)"]
+      ];
+      var seen = [];
+      stops.forEach(function(s){
+        if (seen.length && seen[seen.length-1][0] === s[0]) seen[seen.length-1] = s;
+        else seen.push(s);
+      });
+
+      var body = seen.map(function(s){ return s[0] + "% { width: " + s[1].toFixed(1) + "px; animation-timing-function: " + s[2] + "; }"; }).join(" ");
+      keyframesCss.push("@keyframes promptClip" + i + " { " + body + " }");
+      cursorStops = cursorStops.concat(seen);
+
+      groupsSvg.push('\n      <clipPath id="promptClip' + i + '">\n        <rect x="' + x + '" y="' + (y-14) + '" width="' + fullW.toFixed(1) + '" height="20" class="promptClipRect' + i + '" />\n      </clipPath>');
+    });
+
+    var textSvg = commands.map(function(cmd, i){
+      var fullW = Math.max(1, cmd.length) * PROMPT_CHAR_W;
+      return '\n      <text x="' + x + '" y="' + y + '" class="promptcmd" clip-path="url(#promptClip' + i + ')" textLength="' + fullW.toFixed(1) + '" lengthAdjust="spacingAndGlyphs" xml:space="preserve">' + xmlEscape(cmd) + '</text>';
+    }).join("");
+
+    var clipAnimCss = commands.map(function(_, i){
+      return ".promptClipRect" + i + " { animation: promptClip" + i + " " + total.toFixed(3) + "s infinite; }";
+    }).join("\n      ");
+
+    var cursorBody = cursorStops.map(function(s){
+      return s[0] + "% { transform: translateX(" + s[1].toFixed(1) + "px); animation-timing-function: " + s[2] + "; }";
+    }).join(" ");
+    var cursorCss = "@keyframes promptCursorMove { " + cursorBody + " }\n      .promptcursor { animation: promptCursorMove " + total.toFixed(3) + "s infinite, blink 1s steps(1) infinite; }";
+
+    var cursorSvg = '<rect x="' + x.toFixed(1) + '" y="' + (y-14).toFixed(1) + '" width="8" height="16" class="promptcursor" />';
+
+    var style = keyframesCss.join("\n      ") + "\n      " + clipAnimCss + "\n      " + cursorCss;
+    var defs = groupsSvg.join("");
+    return { style: style, defs: defs, cmdSvg: textSvg, cursorSvg: cursorSvg, maxW: maxW };
+  }
+
+  // ---- full card SVG, ported 1:1 from build_svg() in the Python script -------
+  function buildSvg(rows, fields, login, colors, promptCommands){
+    var PAD = 34, ART_W = ART_COLS * CELL_W, ART_H = rows.length * CELL_H, GAP = 46,
+        FIELD_LINE_H = 22, HEADER_H = 26, RULE_GAP = 10, SWATCH = 20, SWATCH_GAP = 8, PROMPT_H = 62;
+
+    var infoX = PAD + ART_W + GAP;
+    var headerY = TITLEBAR_H + PAD + HEADER_H;
+    var ruleY = headerY + RULE_GAP;
+    var fieldsStartY = ruleY + 30;
+
+    var fieldsH = fields.length * FIELD_LINE_H;
+    var swatchY = fieldsStartY + fieldsH + 14;
+    var infoBottom = swatchY + SWATCH + 10;
+
+    var artTop = fieldsStartY - 12;
+    var artBottom = artTop + ART_H;
+    var contentBottom = Math.max(infoBottom, artBottom);
+
+    var promptY = contentBottom + 40;
+    var H = promptY + PROMPT_H + 20;
+    var headerText = login + "@github";
+    var ruleLen = Math.max(headerText.length + 2, ART_COLS);
+    var longestField = 0;
+    fields.forEach(function(f){ longestField = Math.max(longestField, (f[0] + ": " + f[1]).length); });
+    var W = infoX + Math.max(360, longestField * 8.2) + PAD;
+
+    var artSvg = rows.map(function(row, i){
+      var y = artTop + i*CELL_H + CELL_H*0.8;
+      var delay = Math.round(i*0.045*1000)/1000;
+      return '\n      <text x="' + PAD + '" y="' + y.toFixed(1) + '" class="art fadein" style="animation-delay:' + delay + 's" textLength="' + ART_W.toFixed(1) + '" lengthAdjust="spacingAndGlyphs" xml:space="preserve">' + xmlEscape(row) + '</text>';
+    }).join("");
+
+    var headerSvg = '<text x="' + infoX + '" y="' + headerY + '" class="header">' + xmlEscape(headerText) + '</text>\n  <line x1="' + infoX + '" y1="' + ruleY + '" x2="' + (infoX + ruleLen*9.4) + '" y2="' + ruleY + '" class="rule" />';
+
+    var fieldLines = fields.map(function(f, i){
+      var y = fieldsStartY + i*FIELD_LINE_H;
+      var delay = 0.5 + i*0.06;
+      return '\n      <text x="' + infoX + '" y="' + y + '" class="fieldline typewriter" style="animation-delay:' + delay.toFixed(2) + 's"><tspan class="label">' + xmlEscape(f[0]) + ':</tspan> <tspan class="value">' + xmlEscape(f[1]) + '</tspan></text>';
+    }).join("");
+
+    var swatchLines = colors.palette.map(function(color, i){
+      var x = infoX + i*(SWATCH + SWATCH_GAP);
+      var delay = 0.5 + fields.length*0.06 + i*0.05;
+      return '\n      <rect x="' + x.toFixed(1) + '" y="' + swatchY.toFixed(1) + '" width="' + SWATCH + '" height="' + SWATCH + '" rx="3" fill="' + color + '" stroke="#2a3350" stroke-width="1" class="swatch" style="animation-delay:' + delay.toFixed(2) + 's" />';
+    }).join("");
+
+    var promptLine1 = "┌──(" + login + "@github-[~]";
+    var promptLine2 = "└─$ ";
+    var typedX = PAD + (promptLine2.length + 1) * 9.0;
+    var typedY = promptY + 24;
+    var pp = buildPromptTypingSvg(promptCommands, typedX, typedY);
+
+    var promptSvg = '<text x="' + PAD + '" y="' + promptY + '" class="prompt">' + xmlEscape(promptLine1) + '</text>\n  <text x="' + PAD + '" y="' + typedY + '" class="prompt">' + xmlEscape(promptLine2) + '</text>\n  ' + pp.cmdSvg + '\n  ' + pp.cursorSvg;
+
+    W = Math.max(W, typedX + pp.maxW + PAD);
+
+    var titleText = login + "@github: ~";
+    var chromeSvg = '\n  <rect x="0" y="0" width="' + W.toFixed(0) + '" height="' + H.toFixed(0) + '" rx="10" fill="' + colors.bg + '" />\n  <path d="M0,10 a10,10 0 0 1 10,-10 h' + (W-20).toFixed(0) + ' a10,10 0 0 1 10,10 v' + (TITLEBAR_H-10).toFixed(0) + ' h-' + W.toFixed(0) + ' z" fill="' + colors.titlebar + '" />\n  <circle cx="24" cy="' + (TITLEBAR_H/2).toFixed(0) + '" r="6" fill="#ff5f57" />\n  <circle cx="46" cy="' + (TITLEBAR_H/2).toFixed(0) + '" r="6" fill="#febc2e" />\n  <circle cx="68" cy="' + (TITLEBAR_H/2).toFixed(0) + '" r="6" fill="#28c840" />\n  <text x="' + (W/2).toFixed(0) + '" y="' + (TITLEBAR_H/2+5).toFixed(0) + '" text-anchor="middle" class="titletext">' + xmlEscape(titleText) + '</text>\n  <line x1="0" y1="' + TITLEBAR_H + '" x2="' + W.toFixed(0) + '" y2="' + TITLEBAR_H + '" stroke="#1f2740" stroke-width="1" />';
+
+    return '<svg width="' + W.toFixed(0) + '" height="' + H.toFixed(0) + '" viewBox="0 0 ' + W.toFixed(0) + ' ' + H.toFixed(0) + '" xmlns="http://www.w3.org/2000/svg">\n  <defs>\n    <style>\n      .art { font-family: \'Courier New\', monospace; font-size: ' + (CELL_H*0.82).toFixed(1) + 'px; fill: ' + colors.accent + '; white-space: pre; }\n      .header { font-family: \'Courier New\', monospace; font-size: 18px; font-weight: bold; fill: ' + colors.header + '; }\n      .rule { stroke: ' + colors.header + '; stroke-width: 1.4; opacity: 0.85; }\n      .fieldline { font-family: \'Courier New\', monospace; font-size: 13px; }\n      .label { fill: ' + colors.label + '; font-weight: bold; }\n      .value { fill: ' + colors.value + '; }\n      .prompt { font-family: \'Courier New\', monospace; font-size: 15px; font-weight: bold; fill: ' + colors.header + '; }\n      .titletext { font-family: \'Courier New\', monospace; font-size: 13px; fill: ' + colors.titleText + '; }\n      .promptcmd { font-family: \'Courier New\', monospace; font-size: 15px; fill: ' + colors.value + '; white-space: pre; }\n      .promptcursor { fill: ' + colors.accent + '; }\n      ' + pp.style + '\n      .fadein { animation-name: reveal; animation-duration: 0.35s; animation-fill-mode: forwards; animation-timing-function: steps(1); }\n      .typewriter { animation-name: reveal; animation-duration: 0.4s; animation-fill-mode: forwards; animation-timing-function: steps(1); }\n      .swatch { animation-name: revealSwatch; animation-duration: 0.35s; animation-fill-mode: forwards; animation-timing-function: steps(1); }\n      @keyframes reveal { 0% { opacity: 0; } 1%, 100% { opacity: 1; } }\n      @keyframes revealSwatch { 0% { opacity: 0; } 1%, 100% { opacity: 1; } }\n      @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }\n    </style>\n    ' + pp.defs + '\n  </defs>\n  ' + chromeSvg + '\n\n  ' + artSvg + '\n\n  ' + headerSvg + '\n  ' + fieldLines + '\n  ' + swatchLines + '\n\n  ' + promptSvg + '\n</svg>';
+  }
+
+  function buildPythonSnippet(){
+    var fieldsPy = state.fields.map(function(f){ return "    (" + pyStr(f[0]) + ", " + pyStr(f[1]) + "),"; }).join("\n");
+    var promptPy = state.promptCommands.map(function(c){ return "    " + pyStr(c) + ","; }).join("\n");
+    var palettePy = state.colors.palette.map(pyStr).join(", ");
+    return "# Paste over the matching sections of the generator script.\n" +
+      "PROFILE_FIELDS = [\n" + fieldsPy + "\n]\n\n" +
+      "PROMPT_COMMANDS = [\n" + promptPy + "\n]\n\n" +
+      "BG_COLOR = " + pyStr(state.colors.bg) + "\n" +
+      "TITLEBAR_COLOR = " + pyStr(state.colors.titlebar) + "\n" +
+      "TITLE_TEXT_COLOR = " + pyStr(state.colors.titleText) + "\n" +
+      "ACCENT = " + pyStr(state.colors.accent) + "\n" +
+      "HEADER_COLOR = " + pyStr(state.colors.header) + "\n" +
+      "LABEL_COLOR = " + pyStr(state.colors.label) + "\n" +
+      "VALUE_COLOR = " + pyStr(state.colors.value) + "\n" +
+      "PALETTE = [" + palettePy + "]\n\n" +
+      "ART_COLS = " + (Math.round(state.advanced.artCols) || 40) + "\n\n" +
+      "PROMPT_TYPE_SPEED = " + state.advanced.typeSpeed + "\n" +
+      "PROMPT_DELETE_SPEED = " + state.advanced.deleteSpeed + "\n" +
+      "PROMPT_HOLD_TIME = " + state.advanced.holdTime + "\n" +
+      "PROMPT_GAP_TIME = " + state.advanced.gapTime + "\n" +
+      "PROMPT_CHAR_W = " + Math.max(0, state.advanced.charW) + "\n\n" +
+      "# export GITHUB_LOGIN=" + state.login;
+  }
+
+  // ---- DOM wiring -------------------------------------------------------------
+  var $ = function(id){ return document.getElementById(id); };
+  var svgHost = $("svgHost"), dimsText = $("dimsText");
+  var outPython = $("outPython"), outSvg = $("outSvg"), outConfig = $("outConfig");
+  var linkOpenSvg = $("linkOpenSvg");
+  var renderTimer = null;
+
+  function scheduleRender(){
+    if (renderTimer) clearTimeout(renderTimer);
+    renderTimer = setTimeout(render, 90);
+  }
+
+  function render(){
+    syncAdvancedGlobals();
+    var login = state.login.trim() || "kali";
+    var fields = state.fields.filter(function(f){ return f[0].trim() !== "" || f[1].trim() !== ""; });
+    if (!fields.length) fields = [["", ""]];
+    var commands = state.promptCommands.filter(function(c){ return c.trim() !== ""; });
+
+    var svg = buildSvg(artRows.length ? artRows : asciiRowsDragon(), fields, login, state.colors, commands);
+    svgHost.innerHTML = svg;
+    outSvg.value = svg;
+    outPython.value = buildPythonSnippet();
+
+    var wm = svg.match(/width="(\d+)"/), hm = svg.match(/height="(\d+)"/);
+    dimsText.textContent = (wm ? wm[1] : "?") + " × " + (hm ? hm[1] : "?") + " px";
+
+    // linkOpenSvg.href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    var blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    linkOpenSvg.href = URL.createObjectURL(blob);
+    
+    outConfig.value = JSON.stringify({
+      login: state.login, fields: state.fields, promptCommands: state.promptCommands,
+      colors: state.colors, advanced: state.advanced, avatarDataUrl: state.avatarDataUrl
+    }, null, 2);
+  }
+
+  // -- identity ---------------------------------------------------------------
+  $("inpLogin").addEventListener("input", function(e){ state.login = e.target.value; scheduleRender(); });
+
+  // -- avatar -------------------------------------------------------------------
+  var dropzone = $("dropzone"), inpAvatar = $("inpAvatar");
+  var avatarPreviewRow = $("avatarPreviewRow"), avatarThumb = $("avatarThumb"), avatarStatus = $("avatarStatus");
+  var rerollRow = $("rerollRow"), dragonStatus = $("dragonStatus");
+
+  function setAvatarUiNone(){
+    avatarPreviewRow.hidden = true;
+    rerollRow.hidden = false;
+    dropzone.hidden = false;
+  }
+  function setAvatarUiSet(){
+    avatarPreviewRow.hidden = false;
+    rerollRow.hidden = true;
+    dropzone.hidden = true;
+  }
+
+  function processAvatarFile(file){
+    if (!file || file.type.indexOf("image/") !== 0) return;
+    avatarStatus.textContent = "Processing…"; avatarStatus.className = "statustext";
+    var reader = new FileReader();
+    reader.onload = function(){
+      var dataUrl = reader.result;
+      var img = new Image();
+      img.onload = function(){
+        avatarImgEl = img;
+        asciiRowsFromImage(img).then(function(rows){
+          artRows = rows;
+          state.avatarDataUrl = dataUrl;
+          avatarThumb.src = dataUrl;
+          setAvatarUiSet();
+          avatarStatus.textContent = "Converted to " + ART_COLS + "-column ASCII art.";
+          avatarStatus.className = "statustext ok";
+          render();
+        });
+      };
+      img.onerror = function(){
+        avatarStatus.textContent = "Couldn't read that image.";
+        avatarStatus.className = "statustext err";
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Re-samples the already-loaded avatar (if any) at the current ART_COLS,
+  // so moving the slider doesn't require re-uploading the image.
+  function resampleArt(){
+    if (avatarImgEl){
+      asciiRowsFromImage(avatarImgEl).then(function(rows){ artRows = rows; render(); });
+    } else {
+      artRows = asciiRowsDragon();
+      render();
+    }
+  }
+
+  dropzone.addEventListener("click", function(){ inpAvatar.click(); });
+  dropzone.addEventListener("keydown", function(e){ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); inpAvatar.click(); } });
+  dropzone.addEventListener("dragover", function(e){ e.preventDefault(); dropzone.classList.add("drag"); });
+  dropzone.addEventListener("dragleave", function(){ dropzone.classList.remove("drag"); });
+  dropzone.addEventListener("drop", function(e){
+    e.preventDefault(); dropzone.classList.remove("drag");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) processAvatarFile(e.dataTransfer.files[0]);
+  });
+  inpAvatar.addEventListener("change", function(e){ if (e.target.files[0]) processAvatarFile(e.target.files[0]); });
+
+  $("btnRemoveAvatar").addEventListener("click", function(){
+    state.avatarDataUrl = null;
+    avatarImgEl = null;
+    artRows = asciiRowsDragon();
+    setAvatarUiNone();
+    dragonStatus.textContent = "No avatar — using the procedural dragon glyph.";
+    render();
+  });
+  $("btnReroll").addEventListener("click", function(){
+    artRows = asciiRowsDragon();
+    render();
+  });
+
+  // -- ASCII size & animation speed --------------------------------------------
+  var rngArtCols = $("rngArtCols"), valArtCols = $("valArtCols");
+  var inpTypeSpeed = $("inpTypeSpeed"), inpDeleteSpeed = $("inpDeleteSpeed"),
+      inpHoldTime = $("inpHoldTime"), inpGapTime = $("inpGapTime");
+  var resampleTimer = null;
+
+  function syncAdvancedInputs(){
+    rngArtCols.value = state.advanced.artCols;
+    valArtCols.textContent = state.advanced.artCols;
+    inpTypeSpeed.value = state.advanced.typeSpeed;
+    inpDeleteSpeed.value = state.advanced.deleteSpeed;
+    inpHoldTime.value = state.advanced.holdTime;
+    inpGapTime.value = state.advanced.gapTime;
+  }
+
+  rngArtCols.addEventListener("input", function(){
+    state.advanced.artCols = parseInt(rngArtCols.value, 10) || 40;
+    valArtCols.textContent = state.advanced.artCols;
+    syncAdvancedGlobals();
+    if (resampleTimer) clearTimeout(resampleTimer);
+    resampleTimer = setTimeout(resampleArt, 120);
+  });
+  [[inpTypeSpeed,"typeSpeed"],[inpDeleteSpeed,"deleteSpeed"],[inpHoldTime,"holdTime"],[inpGapTime,"gapTime"]]
+    .forEach(function(pair){
+      pair[0].addEventListener("input", function(){
+        var v = parseFloat(pair[0].value);
+        if (!isNaN(v)) state.advanced[pair[1]] = v;
+        syncAdvancedGlobals();
+        scheduleRender();
+      });
+    });
+
+  // -- GitHub stats fetch ---------------------------------------------------
+  $("btnFetchStats").addEventListener("click", function(){
+    var btn = $("btnFetchStats"), status = $("statsStatus");
+    var login = (state.login || "").trim();
+    if (!login){ status.textContent = "Set a GITHUB_LOGIN first."; status.className = "statustext err"; return; }
+    var token = $("inpToken").value.trim();
+    var headers = { "Accept": "application/vnd.github+json" };
+    if (token) headers["Authorization"] = "Bearer " + token;
+
+    btn.disabled = true; status.textContent = "Fetching…"; status.className = "statustext";
+
+    function setField(label, value){
+      var row = state.fields.find(function(f){ return f[0] === label; });
+      if (row) row[1] = value;
+      else state.fields.push([label, value]);
+    }
+
+    Promise.all([
+      fetch("https://api.github.com/users/" + encodeURIComponent(login), { headers: headers }).then(function(r){ if(!r.ok) throw new Error("user " + r.status); return r.json(); }),
+      fetch("https://api.github.com/users/" + encodeURIComponent(login) + "/repos?per_page=100&type=owner", { headers: headers }).then(function(r){ if(!r.ok) throw new Error("repos " + r.status); return r.json(); })
+    ]).then(function(res){
+      var user = res[0], repos = res[1];
+      setField("GitHub.Followers", String(user.followers != null ? user.followers : "N/A"));
+      setField("GitHub.Repos", String(user.public_repos != null ? user.public_repos : "N/A"));
+      var stars = 0;
+      var langCount = {};
+      (Array.isArray(repos) ? repos : []).forEach(function(r){
+        if (!r.fork) stars += (r.stargazers_count || 0);
+        if (r.language) langCount[r.language] = (langCount[r.language] || 0) + 1;
+      });
+      setField("GitHub.Stars", String(stars));
+      var topLangs = Object.keys(langCount).sort(function(a,b){ return langCount[b]-langCount[a]; }).slice(0,4);
+      setField("GitHub.Languages", topLangs.length ? topLangs.join(", ") : "N/A");
+      renderFieldsList();
+      status.textContent = "Updated Repos / Stars / Followers / Languages. Contributions still needs a manual entry.";
+      status.className = "statustext ok";
+      render();
+    }).catch(function(err){
+      status.textContent = "Fetch failed (" + err.message + "). Check the username, or enter stats by hand below.";
+      status.className = "statustext err";
+    }).finally(function(){ btn.disabled = false; });
+  });
+
+  // -- fields list editor -----------------------------------------------------
+  var fieldsList = $("fieldsList");
+  function renderFieldsList(){
+    fieldsList.innerHTML = "";
+    state.fields.forEach(function(f, i){
+      var row = document.createElement("div");
+      row.className = "listitem";
+      var labelInp = document.createElement("input");
+      labelInp.type = "text"; labelInp.value = f[0]; labelInp.placeholder = "Label";
+      labelInp.style.flex = "0 0 38%";
+      labelInp.addEventListener("input", function(){ state.fields[i][0] = labelInp.value; scheduleRender(); });
+      var valueInp = document.createElement("input");
+      valueInp.type = "text"; valueInp.value = f[1]; valueInp.placeholder = "Value";
+      valueInp.className = "grow";
+      valueInp.addEventListener("input", function(){ state.fields[i][1] = valueInp.value; scheduleRender(); });
+      var del = document.createElement("button");
+      del.type = "button"; del.className = "iconbtn"; del.title = "Remove";
+      del.innerHTML = "✕";
+      del.addEventListener("click", function(){ state.fields.splice(i,1); renderFieldsList(); render(); });
+      row.appendChild(labelInp); row.appendChild(valueInp); row.appendChild(del);
+      fieldsList.appendChild(row);
+    });
+    $("fieldsCount").textContent = state.fields.length + " field" + (state.fields.length===1?"":"s");
+  }
+  $("btnAddField").addEventListener("click", function(){ state.fields.push(["", ""]); renderFieldsList(); render(); });
+
+  // -- prompt commands list editor --------------------------------------------
+  var promptList = $("promptList");
+  function renderPromptList(){
+    promptList.innerHTML = "";
+    state.promptCommands.forEach(function(c, i){
+      var row = document.createElement("div");
+      row.className = "listitem";
+      var inp = document.createElement("input");
+      inp.type = "text"; inp.value = c; inp.className = "grow"; inp.placeholder = "typed line";
+      inp.addEventListener("input", function(){ state.promptCommands[i] = inp.value; scheduleRender(); });
+      var del = document.createElement("button");
+      del.type = "button"; del.className = "iconbtn"; del.title = "Remove";
+      del.innerHTML = "✕";
+      del.addEventListener("click", function(){ state.promptCommands.splice(i,1); renderPromptList(); render(); });
+      row.appendChild(inp); row.appendChild(del);
+      promptList.appendChild(row);
+    });
+    $("promptCount").textContent = state.promptCommands.length + " line" + (state.promptCommands.length===1?"":"s");
+  }
+  $("btnAddPrompt").addEventListener("click", function(){ state.promptCommands.push("new role"); renderPromptList(); render(); });
+
+  // -- palette editor -----------------------------------------------------------
+  function bindColorPair(pickId, textId, key){
+    var pick = $(pickId), text = $(textId);
+    pick.value = state.colors[key]; text.value = state.colors[key];
+    pick.addEventListener("input", function(){ state.colors[key] = pick.value; text.value = pick.value; scheduleRender(); });
+    text.addEventListener("input", function(){
+      var v = text.value.trim();
+      state.colors[key] = v;
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) pick.value = v;
+      scheduleRender();
+    });
+  }
+  bindColorPair("pickBg","textBg","bg");
+  bindColorPair("pickTitlebar","textTitlebar","titlebar");
+  bindColorPair("pickTitleText","textTitleText","titleText");
+  bindColorPair("pickAccent","textAccent","accent");
+  bindColorPair("pickHeader","textHeader","header");
+  bindColorPair("pickLabel","textLabel","label");
+  bindColorPair("pickValue","textValue","value");
+
+  var paletteGrid = $("paletteGrid");
+  function renderPalette(){
+    paletteGrid.innerHTML = "";
+    state.colors.palette.forEach(function(color, i){
+      var pick = document.createElement("input");
+      pick.type = "color"; pick.className = "swatchpick"; pick.value = color; pick.title = "Swatch " + (i+1);
+      pick.addEventListener("input", function(){ state.colors.palette[i] = pick.value; scheduleRender(); });
+      paletteGrid.appendChild(pick);
+    });
+  }
+
+  // -- export tabs -----------------------------------------------------------
+  document.querySelectorAll(".exporttab").forEach(function(tab){
+    tab.addEventListener("click", function(){
+      document.querySelectorAll(".exporttab").forEach(function(t){ t.classList.remove("active"); });
+      document.querySelectorAll(".exportpane").forEach(function(p){ p.classList.remove("active"); });
+      tab.classList.add("active");
+      document.querySelector('.exportpane[data-pane="' + tab.dataset.pane + '"]').classList.add("active");
+    });
+  });
+
+  function copyText(text, btn){
+    var done = function(ok){
+      var old = btn.textContent;
+      btn.textContent = ok ? "Copied" : "Copy failed — select & copy below";
+      setTimeout(function(){ btn.textContent = old; }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ done(true); }).catch(function(){ done(false); });
+    } else { done(false); }
+  }
+  $("btnCopyPython").addEventListener("click", function(){ copyText(outPython.value, this); });
+  $("btnCopySvg").addEventListener("click", function(){ copyText(outSvg.value, this); });
+  $("btnCopyConfig").addEventListener("click", function(){ copyText(outConfig.value, this); });
+
+  // -- save / load config ------------------------------------------------------
+  var configStatus = $("configStatus");
+  function setConfigStatus(msg, ok){
+    if (!configStatus) return;
+    configStatus.textContent = msg;
+    configStatus.className = "statustext" + (ok === true ? " ok" : ok === false ? " err" : "");
+  }
+
+  function applyConfig(cfg){
+    if (!cfg || typeof cfg !== "object") throw new Error("bukan objek JSON yang valid");
+    state.login = typeof cfg.login === "string" ? cfg.login : state.login;
+    if (Array.isArray(cfg.fields)) state.fields = cfg.fields;
+    if (Array.isArray(cfg.promptCommands)) state.promptCommands = cfg.promptCommands;
+    if (cfg.colors && typeof cfg.colors === "object") state.colors = Object.assign({}, state.colors, cfg.colors);
+    if (cfg.advanced && typeof cfg.advanced === "object") state.advanced = Object.assign({}, state.advanced, cfg.advanced);
+    $("inpLogin").value = state.login;
+    renderFieldsList(); renderPromptList(); renderPalette(); syncAdvancedInputs(); syncAdvancedGlobals();
+    bindColorPair("pickBg","textBg","bg"); bindColorPair("pickTitlebar","textTitlebar","titlebar");
+    bindColorPair("pickTitleText","textTitleText","titleText"); bindColorPair("pickAccent","textAccent","accent");
+    bindColorPair("pickHeader","textHeader","header"); bindColorPair("pickLabel","textLabel","label");
+    bindColorPair("pickValue","textValue","value");
+
+    if (cfg.avatarDataUrl){
+      var img = new Image();
+      img.onload = function(){
+        avatarImgEl = img;
+        asciiRowsFromImage(img).then(function(rows){
+          artRows = rows; state.avatarDataUrl = cfg.avatarDataUrl;
+          avatarThumb.src = cfg.avatarDataUrl; setAvatarUiSet();
+          render();
+        });
+      };
+      img.src = cfg.avatarDataUrl;
+    } else {
+      avatarImgEl = null;
+      state.avatarDataUrl = null; artRows = asciiRowsDragon(); setAvatarUiNone(); render();
+    }
+  }
+
+  $("inpConfigFile").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try { applyConfig(JSON.parse(reader.result)); setConfigStatus("Configuration loaded from " + file.name + ".", true); }
+      catch(err){ setConfigStatus("Failed to read the file: " + err.message, false); }
+    };
+    reader.onerror = function(){ setConfigStatus("Failed to read the file.", false); };
+    reader.readAsText(file);
+  });
+  $("btnApplyConfig").addEventListener("click", function(){
+    var raw = $("inpConfigPaste").value.trim();
+    if (!raw){ setConfigStatus("Please paste the JSON config into the box above.", false); return; }
+    try { applyConfig(JSON.parse(raw)); setConfigStatus("Configuration applied.", true); }
+    catch(err){ setConfigStatus("Invalid JSON: " + err.message, false); }
+  });
+
+  // -- reset --------------------------------------------------------------------
+  $("btnReset").addEventListener("click", function(){
+    state = defaultState();
+    avatarImgEl = null;
+    syncAdvancedGlobals();
+    artRows = asciiRowsDragon();
+    $("inpLogin").value = state.login;
+    $("inpToken").value = "";
+    setAvatarUiNone();
+    dragonStatus.textContent = "No avatar — using the procedural dragon glyph.";
+    setConfigStatus("");
+    renderFieldsList(); renderPromptList(); renderPalette(); syncAdvancedInputs();
+    bindColorPair("pickBg","textBg","bg"); bindColorPair("pickTitlebar","textTitlebar","titlebar");
+    bindColorPair("pickTitleText","textTitleText","titleText"); bindColorPair("pickAccent","textAccent","accent");
+    bindColorPair("pickHeader","textHeader","header"); bindColorPair("pickLabel","textLabel","label");
+    bindColorPair("pickValue","textValue","value");
+    render();
+  });
+
+  // ---- boot ---------------------------------------------------------------
+  syncAdvancedGlobals();
+  syncAdvancedInputs();
+  artRows = asciiRowsDragon();
+  renderFieldsList();
+  renderPromptList();
+  renderPalette();
+  render();
+
+})();
+</script>
+
+</body></html>

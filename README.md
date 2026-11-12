@@ -15,6 +15,8 @@ a typing prompt, and pulls in live GitHub stats — all rendered as a single sel
 
 ![Example card](https://raw.githubusercontent.com/pangeran-droid/ascii-profile-card/refs/heads/main/assets/profile.svg)
 
+![Example web version](https://raw.githubusercontent.com/pangeran-droid/ascii-profile-card/refs/heads/main/web-version/assets/images/preview.png)
+
 <details>
 <summary>ascii-profile-card v2</summary>
 <br>

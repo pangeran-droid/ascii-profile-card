@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  
+  <!-- Primary SEO Meta Tags -->
+  <title>ASCII Card Studio — Interactive Terminal & Profile Card Generator for GitHub</title>
+  <meta name="title" content="ASCII Card Studio — Interactive Terminal & Profile Card Generator for GitHub">
+  <meta name="description" content="An interactive web studio to visually design Kali-styled README cards, custom profile fields, terminal prompt animations, and ASCII art generators for your GitHub profile.">
+  <meta name="keywords" content="ASCII card, ASCII art generator, profile card maker, terminal card, GitHub README profile, Kali Linux style, ASCII studio, dev portfolio generator">
+  <meta name="author" content="pangeran-droid">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://pangeran-droid.github.io/ascii-profile-card/">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://pangeran-droid.github.io/ascii-profile-card/">
+  <meta property="og:title" content="ASCII Card Studio — Interactive Terminal & Profile Card Generator">
+  <meta property="og:description" content="Visually design Kali-styled README profile cards, terminal animations, and convert images to custom ASCII art instantly in your browser.">
+  <meta property="og:image" content="https://pangeran-droid.github.io/ascii-profile-card/assets/images/preview.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://pangeran-droid.github.io/ascii-profile-card/">
+  <meta name="twitter:title" content="ASCII Card Studio — Interactive Terminal & Profile Card Generator">
+  <meta name="twitter:description" content="Visually design Kali-styled README profile cards, terminal animations, and convert images to custom ASCII art instantly in your browser.">
+  <meta name="twitter:image" content="https://pangeran-droid.github.io/ascii-profile-card/assets/images/preview.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/images/icon.png">
+
+  <!-- Google Fonts Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="assets/main.css">
+
+  <style>
+    :root{scroll-behavior: smooth;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+    html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+    body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#080b14;color:#e8edf8}
+    img{max-width:100%}
+    [hidden]:not([hidden=until-found i]){display:none!important}
+  </style>
+</head>
+<body>
+
+<!--
+  ASCII Card Studio
+  Developed by GitHub user @pangeran-droid — github.com/pangeran-droid
+  Part of the ascii-profile-card repository.
+-->
+  
+<div class="loader-overlay">
+  <div class="loader" role="status" aria-label="Loading"></div>
+</div>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+    <div class="titles">
+      <h1>ASCII Card Studio — v1.2</h1>
+      <p>Visually design the Kali-styled README card, then copy the config straight back into <code class="inline">profile.svg</code>'s generator script.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnReset" type="button">Reset defaults</button>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="rail">
+
+      <details class="card guide" open>
+        <summary class="card-head"><h2>Quick guide</h2><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+        <div class="card-body">
+        <ol>
+          <li>Configure each panel below — <i>Identity</i>, <i>GitHub Stats</i>, <i>Profile Fields</i>, <i>Terminal Prompt</i>, <i>Color Palette</i>, and <i>ASCII &amp; Animations</i>. The preview on the right (or above, on narrower screens) updates in real-time as you type.</li>
+          <li>Add art directly in <code class="inline">assets/art-collection.js</code>: write <code class="inline">@@@ Name</code>, paste the ASCII, then click <b>Next art</b> to browse the collection.</li>
+          <li>Already running the Python version? Each of the <i>Profile Fields</i> and <i>Terminal Prompt</i> panels has a paste-to-import box, so you don't have to retype anything.</li>
+          <li>Once you're satisfied, open the <b>Python snippet</b> tab below the preview and click <b>Copy snippet</b>, then paste it into the top of <code class="inline">scripts/generate_card.py</code>, overwriting the matching constants.</li>
+          <li>Open the <b>README embed</b> tab for a ready-to-paste <code class="inline">&lt;img&gt;</code> snippet for your <code class="inline">README.md</code>.</li>
+          <li>Commit and push. The existing GitHub Actions workflow re-renders <code class="inline">assets/profile.svg</code> automatically — no workflow changes needed.</li>
+        </ol>
+          <div class="note">Everything on this page runs in your own browser — nothing is uploaded anywhere. Save your progress any time from the <b>Save/load config</b> tab below the preview.</div>
+        </div>
+      </details>
+
+      <details class="card" open>
+        <summary class="card-head"><h2>Identity</h2><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+        <div class="card-body">
+          <label class="field">
+            <span class="lbl">GITHUB_LOGIN</span>
+            <input type="text" id="inpLogin" value="kali" spellcheck="false">
+          </label>
+
+          <label class="field">
+            <span class="lbl">README repo (optional — owner/repo)</span>
+            <input type="text" id="inpRepo" placeholder="defaults to login/login, the profile-readme repo" spellcheck="false">
+          </label>
+
+          <label class="field">
+            <span class="lbl">Avatar image</span>
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload avatar image">
+              Click to choose an image, or drag one here<br>— square-cropped and converted to ASCII art
+            </div>
+            <input type="file" id="inpAvatar" accept="image/*" hidden>
+          </label>
+          <div class="avatarpreview" id="avatarPreviewRow" hidden>
+            <img id="avatarThumb" alt="">
+            <div class="grow">
+              <div style="font-size:12px">Avatar set</div>
+              <div class="statustext" id="avatarStatus"></div>
+            </div>
+            <button class="btn small danger" id="btnRemoveAvatar" type="button">Remove</button>
+          </div>
+          <div class="row" id="rerollRow">
+            <span class="statustext grow" id="dragonStatus" aria-live="polite">No avatar — using the procedural dragon glyph.</span>
+            <button class="btn small" id="btnReroll" type="button">Next art</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="card" open>
+        <summary class="card-head"><h2>GitHub stats</h2><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+        <div class="card-body">
+          <label class="field">
+            <span class="lbl">GITHUB_TOKEN (optional, read-only scope)</span>
+            <input type="password" id="inpToken" placeholder="only used for a client-side fetch, never stored" spellcheck="false">
+          </label>
+          <div class="row">
+            <button class="btn grow" id="btnFetchStats" type="button">Fetch live stats</button>
+          </div>
+          <div class="statustext" id="statsStatus">Repos / Stars / Followers / Languages fill in below on fetch. Contributions is best entered by hand — the contributions API needs a server-side call.</div>
+        </div>
+      </details>
+
+      <details class="card" open>
+        <summary class="card-head"><h2>Profile fields</h2><span class="hint" id="fieldsCount"></span></summary>
+        <div class="card-body">
+          <div id="fieldsList" style="display:flex;flex-direction:column;gap:7px"></div>
+          <button class="btn small" id="btnAddField" type="button">+ Add field</button>
+
+          <div class="importbox">
+            <span class="lbl">Already have a PROFILE_FIELDS list? Paste it here to import</span>
+            <textarea id="inpImportFields" placeholder='("Role", "informatics student"),&#10;("Focus", "junior web developer"),' spellcheck="false"></textarea>
+            <div class="row"><button class="btn small" id="btnImportFields" type="button">Import fields</button></div>
+            <div class="statustext" id="importFieldsStatus"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary class="card-head"><h2>Terminal prompt</h2><span class="hint" id="promptCount"></span></summary>
+        <div class="card-body">
+          <p style="margin:0;font-size:11.5px;color:var(--muted)">Each line is typed, held, then deleted in the looping terminal prompt.</p>
+          <div id="promptList" style="display:flex;flex-direction:column;gap:7px"></div>
+          <button class="btn small" id="btnAddPrompt" type="button">+ Add line</button>
+
+          <div class="importbox">
+            <span class="lbl">Already have a PROMPT_COMMANDS list? Paste it here to import</span>
+            <textarea id="inpImportPrompt" placeholder='"informatics student",&#10;"junior web developer",' spellcheck="false"></textarea>
+            <div class="row"><button class="btn small" id="btnImportPrompt" type="button">Import lines</button></div>
+            <div class="statustext" id="importPromptStatus"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary class="card-head"><h2>Palette</h2></summary>
+        <div class="card-body">
+          <span class="lbl">Quick themes</span>
+          <div class="themepresets" id="themePresets"></div>
+
+          <div class="colorrow"><span class="name">Window bg</span><input type="color" class="swatchpick" id="pickBg"><input type="text" class="grow" id="textBg"></div>
+          <div class="colorrow"><span class="name">Title bar</span><input type="color" class="swatchpick" id="pickTitlebar"><input type="text" class="grow" id="textTitlebar"></div>
+          <div class="colorrow"><span class="name">Title text</span><input type="color" class="swatchpick" id="pickTitleText"><input type="text" class="grow" id="textTitleText"></div>
+          <div class="colorrow"><span class="name">ASCII art</span><input type="color" class="swatchpick" id="pickAccent"><input type="text" class="grow" id="textAccent"></div>
+          <div class="colorrow"><span class="name">Header / prompt</span><input type="color" class="swatchpick" id="pickHeader"><input type="text" class="grow" id="textHeader"></div>
+          <div class="colorrow"><span class="name">Field labels</span><input type="color" class="swatchpick" id="pickLabel"><input type="text" class="grow" id="textLabel"></div>
+          <div class="colorrow"><span class="name">Field values</span><input type="color" class="swatchpick" id="pickValue"><input type="text" class="grow" id="textValue"></div>
+          <span class="lbl" style="margin-top:4px">Swatch row (8)</span>
+          <div class="palettegrid" id="paletteGrid"></div>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary class="card-head"><h2>ASCII &amp; animation</h2><span class="hint">RAMP, ART_COLS &amp; PROMPT_*</span></summary>
+        <div class="card-body">
+          <label class="field">
+            <span class="lbl">RAMP — shading characters, dark to light</span>
+            <div class="row">
+              <select id="selRampPreset" aria-label="Choose an ASCII shading ramp">
+                <option value="default">Default</option>
+                <option value="standard">Standard</option>
+                <option value="minimal">Minimal</option>
+                <option value="dense">Dense</option>
+                <option value="custom">Custom</option>
+              </select>
+              <input type="text" id="inpRamp" class="grow" value=" .:+#@" spellcheck="false" aria-label="ASCII shading characters from dark to light">
+            </div>
+            <p class="helptext">Choose a preset or edit the characters directly. The first character represents the darkest shade.</p>
+            <span class="statustext" id="rampStatus" aria-live="polite"></span>
+          </label>
+          <label class="field">
+            <span class="lbl">ART_COLS — ASCII art width (in characters)</span>
+            <div class="row">
+              <input type="range" id="rngArtCols" min="20" max="60" step="1" class="grow">
+              <span class="rangeval" id="valArtCols">40</span>
+            </div>
+            <p class="helptext">A higher value results in a more detailed avatar/dragon, but makes the card wider.</p>
+          </label>
+
+          <div class="fieldgrid2">
+            <label class="field">
+              <span class="lbl">Typing speed (seconds/character)</span>
+              <input type="number" id="inpTypeSpeed" min="0.01" max="1" step="0.01">
+            </label>
+            <label class="field">
+              <span class="lbl">Deleting speed (seconds/character)</span>
+              <input type="number" id="inpDeleteSpeed" min="0.01" max="1" step="0.005">
+            </label>
+            <label class="field">
+              <span class="lbl">Pause after typing finishes (seconds)</span>
+              <input type="number" id="inpHoldTime" min="0" max="10" step="0.1">
+            </label>
+            <label class="field">
+              <span class="lbl">Pause before the next line (seconds)</span>
+              <input type="number" id="inpGapTime" min="0" max="10" step="0.1">
+            </label>
+            <label class="field">
+              <span class="lbl">Prompt character width (px)</span>
+              <input type="number" id="inpCharW" min="4" max="20" step="0.5">
+            </label>
+          </div>
+          <p class="helptext">These values correspond exactly to <code class="inline">ART_COLS</code>, <code class="inline">PROMPT_TYPE_SPEED</code>, <code class="inline">PROMPT_DELETE_SPEED</code>, <code class="inline">PROMPT_HOLD_TIME</code>, <code class="inline">PROMPT_GAP_TIME</code>, and <code class="inline">PROMPT_CHAR_W</code> in the Python script — changing them here also updates the Python snippet tab.</p>
+        </div>
+      </details>
+
+      <div class="foot">Everything here runs in your browser — nothing is uploaded. The token field is only used for one direct call to the GitHub API.</div>
+    </div>
+
+    <div class="stage">
+      <div class="stagecard">
+        <div class="stagehead">
+          <h2>Live preview</h2>
+          <span class="dims" id="dimsText">— × —</span>
+        </div>
+        <div class="stagebody">
+          <div id="svgHost"></div>
+        </div>
+        <div class="exporttabs">
+          <button class="exporttab active" data-pane="python" type="button">Python snippet</button>
+          <button class="exporttab" data-pane="readme" type="button">README embed</button>
+          <button class="exporttab" data-pane="svg" type="button">SVG markup</button>
+          <button class="exporttab" data-pane="config" type="button">Save / load config</button>
+        </div>
+
+        <div class="exportpane active" data-pane="python">
+          <p>Drop this into the script in place of <code class="inline">PROFILE_FIELDS</code>, <code class="inline">PROMPT_COMMANDS</code>, and the color/size constants.</p>
+          <textarea id="outPython" readonly spellcheck="false"></textarea>
+          <div class="row"><button class="btn small" id="btnCopyPython" type="button">Copy snippet</button></div>
+        </div>
+
+        <div class="exportpane" data-pane="readme">
+          <p>Paste this into your profile README (usually the <code class="inline">README.md</code> of a repo named exactly like your username).</p>
+          <textarea id="outReadme" readonly spellcheck="false"></textarea>
+          <div class="row"><button class="btn small" id="btnCopyReadme" type="button">Copy snippet</button></div>
+          <p class="helptext">Uses <code class="inline">raw.githubusercontent.com</code>, not a <code class="inline">github.com/.../blob/...</code> link — the latter is an HTML page and won't render inside an <code class="inline">&lt;img&gt;</code> tag.</p>
+        </div>
+
+        <div class="exportpane" data-pane="svg">
+          <p>Download links can't trigger a save from inside this preview — copy the markup, or open it in a new tab and use the browser's "Save As".</p>
+          <textarea id="outSvg" readonly spellcheck="false"></textarea>
+          <div class="row">
+            <a class="btn small ghost" id="linkOpenSvg" target="_blank" rel="noopener">Open in new tab</a>
+            <button class="btn small" id="btnCopySvg" type="button">Copy markup</button>
+          </div>
+        </div>
+
+        <div class="exportpane" data-pane="config">
+          <p>Save your in-progress design to come back to later, including the avatar.</p>
+          <textarea id="outConfig" readonly spellcheck="false"></textarea>
+          <div class="row">
+            <label class="btn small ghost" style="cursor:pointer">Load file<input type="file" id="inpConfigFile" accept="application/json" hidden></label>
+            <button class="btn small" id="btnCopyConfig" type="button">Copy JSON</button>
+          </div>
+          <label class="field">
+            <span class="lbl">…or paste config JSON here and apply</span>
+            <textarea id="inpConfigPaste" placeholder="{ &quot;login&quot;: ... }" spellcheck="false" style="height:70px"></textarea>
+          </label>
+          <div class="row"><button class="btn small" id="btnApplyConfig" type="button">Apply pasted config</button></div>
+          <div class="statustext" id="configStatus"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="assets/art-collection.js"></script>
+<script src="assets/main.js"></script>
+
+</body></html>

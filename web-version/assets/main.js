@@ -1,392 +1,18 @@
-<!--
-ASCII Card Studio
-Developed by GitHub user @pangeran-droid — github.com/pangeran-droid
-Part of the ascii-profile-card repository.
--->
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>ASCII Card Studio</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  /* Layout: two-pane workbench -- a scrollable control rail feeds a sticky
-     terminal-card preview; under 860px the preview floats to the top and
-     the rail drops below it so the result is always the first thing seen. */
-  :root{
-    --bg: #080b14;
-    --panel: #10182b;
-    --panel-2: #0c1223;
-    --border: #202c47;
-    --border-soft: #182038;
-    --fg: #e8edf8;
-    --muted: #8a96b8;
-    --muted-2: #5c6788;
-    --accent: #5dc9f2;
-    --accent-soft: rgba(93,201,242,.14);
-    --danger: #ef4b61;
-    --ok: #3ddc84;
-    --warn: #ffd166;
-    --font-display: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
-    --font-body: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    color-scheme: dark;
-  }
-  *{box-sizing:border-box}
-  body{
-    background:
-      radial-gradient(900px 500px at 85% -10%, rgba(93,201,242,.08), transparent 60%),
-      var(--bg);
-    color:var(--fg);
-    font-family:var(--font-body);
-    padding-inline:16px;
-    min-height:100%;
-  }
-  ::selection{background:var(--accent-soft);color:var(--fg)}
-  h1,h2,h3{font-family:var(--font-display);font-weight:600;letter-spacing:.01em;margin:0}
-  a{color:var(--accent)}
-  .app{max-width:1280px;margin:0 auto;padding-block:20px 56px}
-
-  .topbar{
-    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-    padding:14px 18px;border:1px solid var(--border);border-radius:14px;
-    background:linear-gradient(180deg,var(--panel),var(--panel-2));
-    margin-bottom:20px;
-  }
-  .topbar .dots{display:flex;gap:7px;flex:0 0 auto}
-  .topbar .dot{width:11px;height:11px;border-radius:50%}
-  .topbar .dot.r{background:#ff5f57}.topbar .dot.y{background:#febc2e}.topbar .dot.g{background:#28c840}
-  .topbar .titles{flex:1 1 auto;min-width:0}
-  .topbar h1{font-size:17px;color:var(--fg)}
-  .topbar p{margin:2px 0 0;font-size:12.5px;color:var(--muted);max-width:60ch}
-  .topbar .actions{display:flex;gap:8px;flex:0 0 auto}
-
-  .btn{
-    font-family:var(--font-display);font-size:12.5px;font-weight:600;letter-spacing:.02em;
-    color:var(--fg);background:var(--panel-2);border:1px solid var(--border);
-    border-radius:8px;padding:8px 12px;cursor:pointer;white-space:nowrap;
-    transition:border-color .15s,background .15s,transform .05s;
-  }
-  .btn:hover{border-color:var(--accent);background:#0e1730}
-  .btn:active{transform:translateY(1px)}
-  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .btn.primary{background:var(--accent);color:#06121c;border-color:var(--accent)}
-  .btn.primary:hover{background:#7ad4f5}
-  .btn.ghost{background:transparent}
-  .btn.danger{color:var(--danger);border-color:rgba(239,75,97,.4)}
-  .btn.small{padding:5px 9px;font-size:11px;border-radius:6px}
-  .btn[disabled]{opacity:.45;cursor:not-allowed}
-
-  .grid{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:20px;align-items:start}
-  @media (max-width:860px){ .grid{grid-template-columns:1fr} }
-  .rail{order:1;display:flex;flex-direction:column;gap:14px;min-width:0}
-  .stage{order:2;position:sticky;top:16px;min-width:0}
-  @media (max-width:860px){
-    .rail{order:2}
-    .stage{order:1;position:static}
-  }
-
-  .card{
-    border:1px solid var(--border);border-radius:14px;background:var(--panel);
-    overflow:hidden;
-  }
-  .card > summary, .card > .card-head{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-    padding:12px 14px;cursor:pointer;list-style:none;user-select:none;
-  }
-  .card > summary::-webkit-details-marker{display:none}
-  .card-head h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--fg)}
-  .card-head .hint{font-size:11px;color:var(--muted-2);font-family:var(--font-mono)}
-  .chev{color:var(--muted);transition:transform .15s;flex:0 0 auto}
-  details[open] > summary .chev{transform:rotate(90deg)}
-  .card-body{padding:4px 14px 14px;display:flex;flex-direction:column;gap:10px}
-
-  label.field{display:flex;flex-direction:column;gap:5px;min-width:0}
-  label.field .lbl{font-size:11px;color:var(--muted);font-family:var(--font-mono);letter-spacing:.02em}
-  input[type=text], input[type=password], textarea{
-    font-family:var(--font-mono);font-size:12.5px;color:var(--fg);
-    background:var(--panel-2);border:1px solid var(--border-soft);border-radius:7px;
-    padding:7px 9px;width:100%;min-width:0;
-  }
-  input[type=text]:focus, input[type=password]:focus, textarea:focus{
-    outline:none;border-color:var(--accent);
-  }
-  textarea{resize:vertical;line-height:1.5}
-  .row{display:flex;gap:8px;align-items:center;min-width:0}
-  .row > *{min-width:0}
-  .grow{flex:1 1 auto}
-
-  .listitem{
-    display:flex;gap:7px;align-items:center;padding:7px;border:1px solid var(--border-soft);
-    border-radius:8px;background:var(--panel-2);
-  }
-  .listitem input[type=text]{background:var(--panel)}
-  .iconbtn{
-    flex:0 0 auto;width:26px;height:26px;display:grid;place-items:center;border-radius:6px;
-    border:1px solid var(--border-soft);background:var(--panel);color:var(--muted);cursor:pointer;
-  }
-  .iconbtn:hover{color:var(--danger);border-color:rgba(239,75,97,.4)}
-
-  .colorrow{display:flex;align-items:center;gap:8px}
-  .colorrow .swatchpick{flex:0 0 auto;width:30px;height:30px;border-radius:7px;border:1px solid var(--border-soft);padding:0;background:none;cursor:pointer}
-  .colorrow .name{flex:0 0 108px;font-size:12px;color:var(--muted);font-family:var(--font-mono)}
-  .colorrow input[type=text]{flex:1 1 auto}
-  .palettegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-  .palettegrid .swatchpick{width:100%;aspect-ratio:1;border-radius:8px;border:1px solid var(--border-soft);cursor:pointer}
-
-  .dropzone{
-    border:1.5px dashed var(--border-soft);border-radius:10px;padding:14px;text-align:center;
-    color:var(--muted);font-size:12px;cursor:pointer;background:var(--panel-2);
-  }
-  .dropzone:hover{border-color:var(--accent);color:var(--fg)}
-  .dropzone.drag{border-color:var(--accent);background:var(--accent-soft)}
-  .avatarpreview{display:flex;align-items:center;gap:10px}
-  .avatarpreview img{width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border-soft)}
-  .statustext{font-size:11px;color:var(--muted-2);font-family:var(--font-mono);min-height:14px}
-  .statustext.ok{color:var(--ok)}
-  .statustext.err{color:var(--danger)}
-
-  .stagecard{border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden}
-  .stagehead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
-  .stagehead h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.08em}
-  .dims{font-size:11px;color:var(--muted-2);font-family:var(--font-mono);font-variant-numeric:tabular-nums}
-  .stagebody{padding:18px;overflow:auto;background:
-    radial-gradient(circle at 1px 1px, var(--border-soft) 1px, transparent 0) 0 0/16px 16px;
-  }
-  .stagebody svg{display:block;max-width:100%;height:auto;margin-inline:auto;filter:drop-shadow(0 20px 40px rgba(0,0,0,.45))}
-
-  .exporttabs{display:flex;gap:6px;padding:10px 14px 0;flex-wrap:wrap}
-  .exporttab{
-    font-family:var(--font-display);font-size:11.5px;font-weight:600;color:var(--muted);
-    background:transparent;border:1px solid var(--border-soft);border-radius:7px;padding:6px 10px;cursor:pointer;
-  }
-  .exporttab.active{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
-  .exportpane{display:none;padding:12px 14px 14px;flex-direction:column;gap:8px}
-  .exportpane.active{display:flex}
-  .exportpane textarea{height:150px;font-size:11.5px}
-  .exportpane p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.5}
-  .exportpane .row{justify-content:flex-end}
-
-  code.inline{font-family:var(--font-mono);background:var(--panel-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;font-size:11.5px}
-  .foot{margin-top:18px;font-size:11.5px;color:var(--muted-2);line-height:1.6;text-align:center}
-  .foot a{color:var(--muted)}
-
-  .guide{border-color:var(--accent);background:linear-gradient(180deg,rgba(93,201,242,.08),var(--panel-2))}
-  .guide ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:var(--fg);line-height:1.55}
-  .guide ol b{color:var(--accent);font-family:var(--font-mono)}
-  .guide .note{margin-top:4px;font-size:11.5px;color:var(--muted);background:var(--panel-2);border:1px solid var(--border-soft);border-radius:8px;padding:8px 10px;line-height:1.55}
-
-  .fieldgrid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  @media (max-width:420px){ .fieldgrid2{grid-template-columns:1fr} }
-  label.field input[type=number]{
-    font-family:var(--font-mono);font-size:12.5px;color:var(--fg);
-    background:var(--panel-2);border:1px solid var(--border-soft);border-radius:7px;
-    padding:7px 9px;width:100%;
-  }
-  label.field input[type=number]:focus{outline:none;border-color:var(--accent)}
-  label.field input[type=range]{width:100%;accent-color:var(--accent)}
-  .rangeval{font-family:var(--font-mono);font-size:11px;color:var(--accent);font-variant-numeric:tabular-nums}
-  .helptext{font-size:11px;color:var(--muted-2);line-height:1.5;margin:0}
-</style>
-
-<div class="app">
-
-  <div class="topbar">
-    <div class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
-    <div class="titles">
-      <h1>ASCII Card Studio - v1.0</h1>
-      <p>Visually design the Kali-styled README card, then copy the config straight back into <code class="inline">profile.svg</code>'s generator script.</p>
-    </div>
-    <div class="actions">
-      <button class="btn" id="btnReset" type="button">Reset defaults</button>
-    </div>
-  </div>
-
-  <div class="grid">
-
-    <div class="rail">
-
-      <details class="card guide" open>
-        <summary class="card-head"><h2>Quick guide</h2><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
-        <div class="card-body">
-        <ol>
-          <li>Configure each panel below — <i>Identity</i>, <i>GitHub Stats</i>, <i>Profile Fields</i>, <i>Terminal Prompt</i>, <i>Color Palette</i>, and <i>ASCII &amp; Animations</i>. The preview on the right (or above, on narrower screens) updates in real-time as you type.</li>
-          <li>Once you’re satisfied, open the <b>Python snippet</b> tab below the preview and click <b>Copy snippet</b>.</li>
-          <li>Paste the copied content into the top of your <code class="inline">scripts/generate_card.py</code> file, overwriting the existing <code class="inline">PROFILE_FIELDS</code>, <code class="inline">PROMPT_COMMANDS</code>, and the color/size constants.</li>
-          <li>Commit and push your changes. The existing GitHub Actions workflow will automatically re-render <code class="inline">assets/profile.svg</code> — no further changes to the workflow are required.</li>
-        </ol>
-          <div class="note">All processes on this page run entirely within your own browser—nothing is uploaded to any server. You can save your progress at any time via the <b>Save/load config</b> tab below the preview.</div>
-        </div>
-      </details>
-
-      <details class="card" open>
-        <summary class="card-head"><h2>Identity</h2><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
-        <div class="card-body">
-          <label class="field">
-            <span class="lbl">GITHUB_LOGIN</span>
-            <input type="text" id="inpLogin" value="kali" spellcheck="false">
-          </label>
-
-          <label class="field">
-            <span class="lbl">Avatar image</span>
-            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload avatar image">
-              Click to choose an image, or drag one here<br>— square-cropped and converted to ASCII art
-            </div>
-            <input type="file" id="inpAvatar" accept="image/*" hidden>
-          </label>
-          <div class="avatarpreview" id="avatarPreviewRow" hidden>
-            <img id="avatarThumb" alt="">
-            <div class="grow">
-              <div style="font-size:12px">Avatar set</div>
-              <div class="statustext" id="avatarStatus"></div>
-            </div>
-            <button class="btn small danger" id="btnRemoveAvatar" type="button">Remove</button>
-          </div>
-          <div class="row" id="rerollRow">
-            <span class="statustext grow" id="dragonStatus">No avatar — using the procedural dragon glyph.</span>
-            <button class="btn small" id="btnReroll" type="button">Reroll art</button>
-          </div>
-        </div>
-      </details>
-
-      <details class="card" open>
-        <summary class="card-head"><h2>GitHub stats</h2><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
-        <div class="card-body">
-          <label class="field">
-            <span class="lbl">GITHUB_TOKEN (optional, read-only scope)</span>
-            <input type="password" id="inpToken" placeholder="only used for a client-side fetch, never stored" spellcheck="false">
-          </label>
-          <div class="row">
-            <button class="btn grow" id="btnFetchStats" type="button">Fetch live stats</button>
-          </div>
-          <div class="statustext" id="statsStatus">Repos / Stars / Followers / Languages fill in below on fetch. Contributions is best entered by hand — the contributions API needs a server-side call.</div>
-        </div>
-      </details>
-
-      <details class="card" open>
-        <summary class="card-head"><h2>Profile fields</h2><span class="hint" id="fieldsCount"></span></summary>
-        <div class="card-body">
-          <div id="fieldsList" style="display:flex;flex-direction:column;gap:7px"></div>
-          <button class="btn small" id="btnAddField" type="button">+ Add field</button>
-        </div>
-      </details>
-
-      <details class="card">
-        <summary class="card-head"><h2>Terminal prompt</h2><span class="hint" id="promptCount"></span></summary>
-        <div class="card-body">
-          <p style="margin:0;font-size:11.5px;color:var(--muted)">Each line is typed, held, then deleted in the looping terminal prompt.</p>
-          <div id="promptList" style="display:flex;flex-direction:column;gap:7px"></div>
-          <button class="btn small" id="btnAddPrompt" type="button">+ Add line</button>
-        </div>
-      </details>
-
-      <details class="card">
-        <summary class="card-head"><h2>Palette</h2></summary>
-        <div class="card-body">
-          <div class="colorrow"><span class="name">Window bg</span><input type="color" class="swatchpick" id="pickBg"><input type="text" class="grow" id="textBg"></div>
-          <div class="colorrow"><span class="name">Title bar</span><input type="color" class="swatchpick" id="pickTitlebar"><input type="text" class="grow" id="textTitlebar"></div>
-          <div class="colorrow"><span class="name">Title text</span><input type="color" class="swatchpick" id="pickTitleText"><input type="text" class="grow" id="textTitleText"></div>
-          <div class="colorrow"><span class="name">ASCII art</span><input type="color" class="swatchpick" id="pickAccent"><input type="text" class="grow" id="textAccent"></div>
-          <div class="colorrow"><span class="name">Header / prompt</span><input type="color" class="swatchpick" id="pickHeader"><input type="text" class="grow" id="textHeader"></div>
-          <div class="colorrow"><span class="name">Field labels</span><input type="color" class="swatchpick" id="pickLabel"><input type="text" class="grow" id="textLabel"></div>
-          <div class="colorrow"><span class="name">Field values</span><input type="color" class="swatchpick" id="pickValue"><input type="text" class="grow" id="textValue"></div>
-          <span class="lbl" style="margin-top:4px">Swatch row (8)</span>
-          <div class="palettegrid" id="paletteGrid"></div>
-        </div>
-      </details>
-
-      <details class="card">
-        <summary class="card-head"><h2>ASCII &amp; animation</h2><span class="hint">ART_COLS &amp; PROMPT_*</span></summary>
-        <div class="card-body">
-          <label class="field">
-            <span class="lbl">ART_COLS — ASCII art width (in characters)</span>
-            <div class="row">
-              <input type="range" id="rngArtCols" min="20" max="60" step="1" class="grow">
-              <span class="rangeval" id="valArtCols">40</span>
-            </div>
-            <p class="helptext">A higher value results in a more detailed avatar/dragon, but makes the card wider.</p>
-          </label>
-
-          <div class="fieldgrid2">
-            <label class="field">
-              <span class="lbl">Typing speed (seconds/character)</span>
-              <input type="number" id="inpTypeSpeed" min="0.01" max="1" step="0.01">
-            </label>
-            <label class="field">
-              <span class="lbl">Deleting speed (seconds/character)</span>
-              <input type="number" id="inpDeleteSpeed" min="0.01" max="1" step="0.005">
-            </label>
-            <label class="field">
-              <span class="lbl">Pause after typing finishes (seconds)</span>
-              <input type="number" id="inpHoldTime" min="0" max="10" step="0.1">
-            </label>
-            <label class="field">
-              <span class="lbl">Pause before the next line (seconds)</span>
-              <input type="number" id="inpGapTime" min="0" max="10" step="0.1">
-            </label>
-          </div>
-          <p class="helptext">These values ​​correspond exactly to <code class="inline">ART_COLS</code>, <code class="inline">PROMPT_TYPE_SPEED</code>, <code class="inline">PROMPT_DELETE_SPEED</code>, <code class="inline">PROMPT_HOLD_TIME</code>, and <code class="inline">PROMPT_GAP_TIME</code> in the Python script—changing them here will also update them in the Python snippet tab.</p>
-        </div>
-      </details>
-
-      <div class="foot">Everything here runs in your browser — nothing is uploaded. The token field is only used for one direct call to the GitHub API.</div>
-    </div>
-
-    <div class="stage">
-      <div class="stagecard">
-        <div class="stagehead">
-          <h2>Live preview</h2>
-          <span class="dims" id="dimsText">— × —</span>
-        </div>
-        <div class="stagebody">
-          <div id="svgHost"></div>
-        </div>
-        <div class="exporttabs">
-          <button class="exporttab active" data-pane="python" type="button">Python snippet</button>
-          <button class="exporttab" data-pane="svg" type="button">SVG markup</button>
-          <button class="exporttab" data-pane="config" type="button">Save / load config</button>
-        </div>
-
-        <div class="exportpane active" data-pane="python">
-          <p>Drop this into the script in place of <code class="inline">PROFILE_FIELDS</code>, <code class="inline">PROMPT_COMMANDS</code>, and the color constants.</p>
-          <textarea id="outPython" readonly spellcheck="false"></textarea>
-          <div class="row"><button class="btn small" id="btnCopyPython" type="button">Copy snippet</button></div>
-        </div>
-
-        <div class="exportpane" data-pane="svg">
-          <p>Download links can't trigger a save from inside this preview — copy the markup, or open it in a new tab and use the browser's "Save As".</p>
-          <textarea id="outSvg" readonly spellcheck="false"></textarea>
-          <div class="row">
-            <a class="btn small ghost" id="linkOpenSvg" target="_blank" rel="noopener">Open in new tab</a>
-            <button class="btn small" id="btnCopySvg" type="button">Copy markup</button>
-          </div>
-        </div>
-
-        <div class="exportpane" data-pane="config">
-          <p>Save your in-progress design to come back to later, including the avatar.</p>
-          <textarea id="outConfig" readonly spellcheck="false"></textarea>
-          <div class="row">
-            <label class="btn small ghost" style="cursor:pointer">Load file<input type="file" id="inpConfigFile" accept="application/json" hidden></label>
-            <button class="btn small" id="btnCopyConfig" type="button">Copy JSON</button>
-          </div>
-          <label class="field">
-            <span class="lbl">…or paste config JSON here and apply</span>
-            <textarea id="inpConfigPaste" placeholder="{ &quot;login&quot;: ... }" spellcheck="false" style="height:70px"></textarea>
-          </label>
-          <div class="row"><button class="btn small" id="btnApplyConfig" type="button">Apply pasted config</button></div>
-          <div class="statustext" id="configStatus"></div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<script>
 (function(){
   "use strict";
 
   // ---- constants ported from the Python generator -------------------------
-  var RAMP = " .:+#@";
+  var RAMP_PRESETS = {
+    default: " .:+#@",
+    standard: " .:-=+*#%@",
+    minimal: " .:#@",
+    dense: " .'`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"
+  };
+  var RAMP = RAMP_PRESETS.default;
+  var ART_COLLECTION = window.ASCII_ART_COLLECTION;
+  if (!Array.isArray(ART_COLLECTION) || ART_COLLECTION.some(function(item){
+    return !item || typeof item.name !== "string" || typeof item.art !== "string" || !item.art.trim();
+  })) throw new Error("assets/art-collection.js must define window.ASCII_ART_COLLECTION with named, non-empty ASCII art entries.");
   var CELL_W = 8.4, CELL_H = 15.0, ART_COLS = 40, TITLEBAR_H = 34;
   var PROMPT_TYPE_SPEED = 0.08, PROMPT_DELETE_SPEED = 0.045,
       PROMPT_HOLD_TIME = 1.1, PROMPT_GAP_TIME = 0.4, PROMPT_CHAR_W = 9.0;
@@ -399,11 +25,13 @@ Part of the ascii-profile-card repository.
   function pyStr(s){ return '"' + String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"') + '"'; }
   function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
   function mod(a,n){ return ((a % n) + n) % n; }
+  function pyUnescape(s){ return String(s).replace(/\\(.)/g, '$1'); }
 
   // ---- default state --------------------------------------------------------
   function defaultState(){
     return {
       login: "kali",
+      repo: "",
       fields: [
         ["Role", "informatics student"],
         ["Focus", "junior web developer & cybersecurity enthusiast"],
@@ -436,6 +64,8 @@ Part of the ascii-profile-card repository.
         gapTime: 0.4,
         charW: 9.0
       },
+      asciiRamp: RAMP_PRESETS.default,
+      asciiArtIndex: -1,
       avatarDataUrl: null
     };
   }
@@ -445,12 +75,88 @@ Part of the ascii-profile-card repository.
 
   function syncAdvancedGlobals(){
     ART_COLS = clamp(Math.round(state.advanced.artCols) || 40, 10, 120);
+    RAMP = state.asciiRamp;
     PROMPT_TYPE_SPEED = state.advanced.typeSpeed > 0 ? state.advanced.typeSpeed : 0.08;
     PROMPT_DELETE_SPEED = state.advanced.deleteSpeed > 0 ? state.advanced.deleteSpeed : 0.045;
     PROMPT_HOLD_TIME = Math.max(0, state.advanced.holdTime);
     PROMPT_GAP_TIME = Math.max(0, state.advanced.gapTime);
-    PROMPT_CHAR_W = Math.max(0, state.advanced.charW);
+    PROMPT_CHAR_W = state.advanced.charW > 0 ? state.advanced.charW : 9.0;
   }
+
+  // ---- theme presets ---------------------------------------------------------
+  var THEMES = [
+    { name: "Kali", colors: { bg:"#0b1120", titlebar:"#141c30", titleText:"#7f8aa6", accent:"#5dc9f2", header:"#e8384f", label:"#ffffff", value:"#5dc9f2",
+      palette:["#0b1120","#e8384f","#3ddc84","#ffd166","#4d8cff","#b16cff","#39e0d0","#e8e8e8"] } },
+    { name: "Dracula", colors: { bg:"#1e1f29", titlebar:"#282a36", titleText:"#6272a4", accent:"#8be9fd", header:"#ff79c6", label:"#f8f8f2", value:"#50fa7b",
+      palette:["#282a36","#ff5555","#50fa7b","#f1fa8c","#bd93f9","#ff79c6","#8be9fd","#f8f8f2"] } },
+    { name: "Nord", colors: { bg:"#2e3440", titlebar:"#3b4252", titleText:"#4c566a", accent:"#88c0d0", header:"#bf616a", label:"#eceff4", value:"#a3be8c",
+      palette:["#3b4252","#bf616a","#a3be8c","#ebcb8b","#81a1c1","#b48ead","#88c0d0","#e5e9f0"] } },
+    { name: "Gruvbox", colors: { bg:"#1d2021", titlebar:"#282828", titleText:"#928374", accent:"#83a598", header:"#fb4934", label:"#ebdbb2", value:"#b8bb26",
+      palette:["#282828","#fb4934","#b8bb26","#fabd2f","#83a598","#d3869b","#8ec07c","#ebdbb2"] } },
+    { name: "Monokai", colors: { bg:"#1e1f1c", titlebar:"#272822", titleText:"#75715e", accent:"#66d9ef", header:"#f92672", label:"#f8f8f2", value:"#a6e22e",
+      palette:["#272822","#f92672","#a6e22e","#e6db74","#66d9ef","#ae81ff","#fd971f","#f8f8f2"] } },
+    { name: "Ocean", colors: { bg:"#061621", titlebar:"#0a2232", titleText:"#4c7f9e", accent:"#3ddce4", header:"#ff6b6b", label:"#eaf6ff", value:"#5ad1ff",
+      palette:["#0a2232","#ff6b6b","#4cd3a5","#ffd166","#5ad1ff","#9b8cff","#3ddce4","#eaf6ff"] } },
+    { name: "One Dark", colors: { bg:"#21252b", titlebar:"#282c34", titleText:"#5c6370", accent:"#61afef", header:"#e06c75", label:"#abb2bf", value:"#98c379",
+      palette:["#282c34","#e06c75","#98c379","#e5c07b","#61afef","#c678dd","#56b6c2","#abb2bf"] } },
+    { name: "Catppuccin", colors: { bg:"#1e1e2e", titlebar:"#181825", titleText:"#6c7086", accent:"#89b4fa", header:"#f38ba8", label:"#cdd6f4", value:"#a6e3a1",
+      palette:["#181825","#f38ba8","#a6e3a1","#f9e2af","#89b4fa","#f5c2e7","#94e2d5","#cdd6f4"] } },
+    { name: "Solarized Dark", colors: { bg:"#001b26", titlebar:"#073642", titleText:"#657b83", accent:"#2aa198", header:"#dc322f", label:"#839496", value:"#859900",
+      palette:["#073642","#dc322f","#859900","#b58900","#2aa198","#6c71c4","#268bd2","#839496"] } },
+    { name: "Cyberpunk", colors: { bg:"#05050a", titlebar:"#0f0e17", titleText:"#727586", accent:"#00f0ff", header:"#ff007f", label:"#ffff00", value:"#00ff66",
+      palette:["#0f0e17","#ff007f","#00ff66","#ffff00","#00f0ff","#9d00ff","#ff5500","#ffffff"] } },
+    { name: "Ubuntu", colors: { bg:"#380c2a", titlebar:"#2c2c2c", titleText:"#b0b2b2", accent:"#be1b28", header:"#27a167", label:"#be1b28", value:"#cdf9ff",
+      palette:["#171421","#c01c28","#26a269","#a2734c","#12488b","#a347ba","#2aa1b3","#d0cfcc"] } },
+    { name: "Mint-Y", colors: { bg:"#1e1e1e", titlebar:"#252525", titleText:"#7f7f7f", accent:"#98cb4c", header:"#f44336", label:"#ffffff", value:"#98cb4c",
+      palette:["#252525","#f44336","#98cb4c","#ffeb3b","#2196f3","#9c27b0","#00bcd4","#ffffff"] } },
+    { name: "Arch Linux", colors: { bg:"#0f1419", titlebar:"#171e26", titleText:"#526270", accent:"#1793d1", header:"#ff5370", label:"#d3c6aa", value:"#a7c080",
+      palette:["#171e26","#ff5370","#a7c080","#dbbc7f","#1793d1","#b48ead","#83c092","#d3c6aa"] } },
+    { name: "Debian", colors: { bg:"#1c1c1c", titlebar:"#262626", titleText:"#767676", accent:"#d70751", header:"#d70751", label:"#ffffff", value:"#ffb300",
+      palette:["#262626","#d70751","#61ce3c","#ffb300","#0080ff","#af00ff","#00cccc","#ffffff"] } },
+    { name: "Fedora", colors: { bg:"#181b20", titlebar:"#222630", titleText:"#6b7385", accent:"#294172", header:"#3c6eb4", label:"#ffffff", value:"#519aba",
+      palette:["#222630","#a23232","#539e3b","#c4a000","#3c6eb4","#8856a7","#2a8282","#ffffff"] } },
+    { name: "Matrix", colors: { bg:"#0d0208", titlebar:"#001100", titleText:"#005500", accent:"#00ff66", header:"#ff0033", label:"#008f11", value:"#00ff41",
+      palette:["#001100","#ff0033","#00ff41","#33ff00","#008f11","#00ffcc","#003300","#00ff00"] } },
+    { name: "SynthWave '84", colors: { bg:"#262335", titlebar:"#241b2f", titleText:"#6c5b7b", accent:"#ff7edb", header:"#fe4450", label:"#f4eee4", value:"#36f9f6",
+      palette:["#241b2f","#fe4450","#36f9f6","#fede5d","#ff7edb","#9775fa","#03edf9","#f4eee4"] } },
+    { name: "Tokyo Night", colors: { bg:"#1a1b26", titlebar:"#16161e", titleText:"#565f89", accent:"#7aa2f7", header:"#f7768e", label:"#c0caf5", value:"#9ece6a",
+      palette:["#16161e","#f7768e","#9ece6a","#e0af68","#7aa2f7","#bb9af7","#7dcfff","#c0caf5"] } },
+    { name: "Rose Pine", colors: { bg:"#191724", titlebar:"#1f1d2e", titleText:"#6e6a86", accent:"#ebbcba", header:"#eb6f92", label:"#e0def4", value:"#31748f",
+      palette:["#1f1d2e","#eb6f92","#31748f","#f6c177","#ebbcba","#c4a7e7","#9ccfd8","#e0def4"] } },
+    { name: "Ayu Dark", colors: { bg:"#0b0e14", titlebar:"#10151d", titleText:"#5c6773", accent:"#39bae6", header:"#ff3333", label:"#bfbdb6", value:"#aad94c",
+      palette:["#10151d","#ff3333","#aad94c","#ffcc66","#39bae6","#f07178","#5ccfe6","#bfbdb6"] } },
+    { name: "Hacker Green", colors: { bg:"#000000", titlebar:"#050505", titleText:"#004400", accent:"#00ff00", header:"#008800", label:"#00cc00", value:"#00ff00",
+      palette:["#000000","#003300","#006600","#009900","#00cc00","#00ff00","#33ff33","#66ff66"] } },
+    { name: "Amber Terminal", colors: { bg:"#120a00", titlebar:"#1a1000", titleText:"#663d00", accent:"#ffb000", header:"#ff6600", label:"#ffd280", value:"#ffb000",
+      palette:["#1a1000","#cc3300","#ff8000","#ffb000","#ffcc00","#ff9933","#ffaa00","#fff0cc"] } },
+    { name: "Phosphorus", colors: { bg:"#030c08", titlebar:"#061710", titleText:"#1e5941", accent:"#2ecc71", header:"#e74c3c", label:"#a3e4d7", value:"#57d9a3",
+      palette:["#061710","#c0392b","#27ae60","#f39c12","#2980b9","#8e44ad","#1abc9c","#ecf0f1"] } },
+    { name: "Mr. Robot", colors: { bg:"#0d0d0d", titlebar:"#171717", titleText:"#444444", accent:"#c0392b", header:"#e74c3c", label:"#cccccc", value:"#ffffff",
+      palette:["#171717","#e74c3c","#27ae60","#f39c12","#2980b9","#8e44ad","#16a085","#ffffff"] } },
+    { name: "C64 Retro", colors: { bg:"#352879", titlebar:"#4b3e8e", titleText:"#786bc6", accent:"#73efff", header:"#8f563b", label:"#aaceff", value:"#ffffff",
+      palette:["#352879","#8f563b","#73efff","#786bc6","#aaceff","#ffffff","#d8ac9c","#4b3e8e"] } },
+    { name: "BackTrack", colors: { bg:"#0e0f12", titlebar:"#16181d", titleText:"#51576d", accent:"#00ffff", header:"#00ffff", label:"#ffffff", value:"#00ffff",
+      palette:["#16181d","#ff0055","#00ff66","#ffcc00","#00ffff","#9900ff","#ffffff","#7d839e"] } },
+    { name: "Terminal Basic", colors: { bg:"#000000", titlebar:"#1a1a1a", titleText:"#666666", accent:"#ffffff", header:"#ff5555", label:"#cccccc", value:"#55ff55",
+      palette:["#000000","#ff5555","#55ff55","#ffff55","#5555ff","#ff55ff","#55ffff","#ffffff"] } },
+    { name: "Vaporwave", colors: { bg:"#1b1a24", titlebar:"#252433", titleText:"#706c9e", accent:"#ff71ce", header:"#01cdfe", label:"#b967ff", value:"#05ffa1",
+      palette:["#252433","#ff71ce","#01cdfe","#05ffa1","#b967ff","#fffb96","#ff71ce","#ffffff"] } },
+    { name: "Cyberdeck", colors: { bg:"#08090d", titlebar:"#11131c", titleText:"#414868", accent:"#ff9e64", header:"#f7768e", label:"#bb9af7", value:"#7dcfff",
+      palette:["#11131c","#f7768e","#9ece6a","#e0af68","#7aa2f7","#bb9af7","#7dcfff","#c0caf5"] } },
+    { name: "Black Hat", colors: { bg:"#050505", titlebar:"#0a0a0a", titleText:"#333333", accent:"#e50914", header:"#ff1e1e", label:"#e0e0e0", value:"#b3b3b3",
+      palette:["#0a0a0a","#e50914","#333333","#555555","#777777","#999999","#cccccc","#ffffff"] } },
+    { name: "GitHub Dark", colors: { bg:"#0d1117", titlebar:"#161b22", titleText:"#8b949e", accent:"#58a6ff", header:"#ff7b72", label:"#c9d1d9", value:"#7ee787",
+      palette:["#161b22","#ff7b72","#7ee787","#f0883e","#58a6ff","#bc8cff","#39c5cf","#c9d1d9"] } },
+    { name: "Night Owl", colors: { bg:"#011627", titlebar:"#010e1a", titleText:"#637777", accent:"#82aaff", header:"#d9f5ff", label:"#d6deeb", value:"#c792ea",
+      palette:["#010e1a","#ef5350","#22da6e","#addb67","#82aaff","#c792ea","#21ecdc","#d6deeb"] } },
+    { name: "Material Darker", colors: { bg:"#212121", titlebar:"#1a1a1a", titleText:"#616161", accent:"#80cbc4", header:"#f07178", label:"#eeffff", value:"#c3e88d",
+      palette:["#1a1a1a","#f07178","#c3e88d","#ffcb6b","#82aaff","#c792ea","#89ddff","#eeffff"] } },
+    { name: "Solarized Light", colors: { bg:"#fdf6e3", titlebar:"#eee8d5", titleText:"#93a1a1", accent:"#2aa198", header:"#dc322f", label:"#657b83", value:"#859900",
+      palette:["#eee8d5","#dc322f","#859900","#b58900","#2aa198","#6c71c4","#268bd2","#657b83"] } },
+    { name: "Matrix Gold", colors: { bg:"#0a0800", titlebar:"#1a1400", titleText:"#665200", accent:"#ffcc00", header:"#ff3300", label:"#ffdd66", value:"#ffea80",
+      palette:["#1a1400","#ff3300","#ffcc00","#ffaa00","#ff9900","#ff6600","#ffee55","#ffffff"] } }
+  ];
+  var COLOR_KEY_TO_ID = { bg:"Bg", titlebar:"Titlebar", titleText:"TitleText", accent:"Accent", header:"Header", label:"Label", value:"Value" };
 
   // ---- procedural dragon art (used when no avatar is set) -------------------
   function asciiRowsDragon(){
@@ -474,6 +180,19 @@ Part of the ascii-profile-card repository.
       out.push(line);
     }
     return out;
+  }
+
+  function asciiRowsFromCollection(index){
+    var lines = ART_COLLECTION[index].art.replace(/\r/g, "").split("\n");
+    while (lines.length && !lines[0].trim()) lines.shift();
+    while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+    return lines;
+  }
+
+  function currentArtRows(){
+    return state.asciiArtIndex >= 0
+      ? asciiRowsFromCollection(state.asciiArtIndex)
+      : asciiRowsDragon();
   }
 
   // ---- avatar -> ASCII art via canvas ---------------------------------------
@@ -558,7 +277,7 @@ Part of the ascii-profile-card repository.
           var fg = alphaSmall[pp] / 255.0;
           if (fg < 0.22){ line += " "; continue; }
           var lum = graySmall[pp] / 255.0;
-          var ci = Math.min(RAMP.length - 2, Math.floor(lum * (RAMP.length - 1)));
+          var ci = Math.min(RAMP.length - 1, Math.floor(lum * (RAMP.length - 1)));
           line += RAMP[ci];
         }
         rows.push(line);
@@ -636,7 +355,8 @@ Part of the ascii-profile-card repository.
 
   // ---- full card SVG, ported 1:1 from build_svg() in the Python script -------
   function buildSvg(rows, fields, login, colors, promptCommands){
-    var PAD = 34, ART_W = ART_COLS * CELL_W, ART_H = rows.length * CELL_H, GAP = 46,
+    var artCols = Math.max(ART_COLS, Math.max.apply(null, rows.map(function(row){ return row.length; })));
+    var PAD = 34, ART_W = artCols * CELL_W, ART_H = rows.length * CELL_H, GAP = 46,
         FIELD_LINE_H = 22, HEADER_H = 26, RULE_GAP = 10, SWATCH = 20, SWATCH_GAP = 8, PROMPT_H = 62;
 
     var infoX = PAD + ART_W + GAP;
@@ -655,7 +375,7 @@ Part of the ascii-profile-card repository.
     var promptY = contentBottom + 40;
     var H = promptY + PROMPT_H + 20;
     var headerText = login + "@github";
-    var ruleLen = Math.max(headerText.length + 2, ART_COLS);
+    var ruleLen = headerText.length + 2;
     var longestField = 0;
     fields.forEach(function(f){ longestField = Math.max(longestField, (f[0] + ": " + f[1]).length); });
     var W = infoX + Math.max(360, longestField * 8.2) + PAD;
@@ -663,7 +383,7 @@ Part of the ascii-profile-card repository.
     var artSvg = rows.map(function(row, i){
       var y = artTop + i*CELL_H + CELL_H*0.8;
       var delay = Math.round(i*0.045*1000)/1000;
-      return '\n      <text x="' + PAD + '" y="' + y.toFixed(1) + '" class="art fadein" style="animation-delay:' + delay + 's" textLength="' + ART_W.toFixed(1) + '" lengthAdjust="spacingAndGlyphs" xml:space="preserve">' + xmlEscape(row) + '</text>';
+      return '\n      <text x="' + PAD + '" y="' + y.toFixed(1) + '" class="art fadein" style="animation-delay:' + delay + 's" textLength="' + Math.max(1, row.length * CELL_W).toFixed(1) + '" lengthAdjust="spacingAndGlyphs" xml:space="preserve">' + xmlEscape(row) + '</text>';
     }).join("");
 
     var headerSvg = '<text x="' + infoX + '" y="' + headerY + '" class="header">' + xmlEscape(headerText) + '</text>\n  <line x1="' + infoX + '" y1="' + ruleY + '" x2="' + (infoX + ruleLen*9.4) + '" y2="' + ruleY + '" class="rule" />';
@@ -711,21 +431,46 @@ Part of the ascii-profile-card repository.
       "LABEL_COLOR = " + pyStr(state.colors.label) + "\n" +
       "VALUE_COLOR = " + pyStr(state.colors.value) + "\n" +
       "PALETTE = [" + palettePy + "]\n\n" +
+      "RAMP = " + pyStr(state.asciiRamp) + "\n\n" +
       "ART_COLS = " + (Math.round(state.advanced.artCols) || 40) + "\n\n" +
       "PROMPT_TYPE_SPEED = " + state.advanced.typeSpeed + "\n" +
       "PROMPT_DELETE_SPEED = " + state.advanced.deleteSpeed + "\n" +
       "PROMPT_HOLD_TIME = " + state.advanced.holdTime + "\n" +
       "PROMPT_GAP_TIME = " + state.advanced.gapTime + "\n" +
-      "PROMPT_CHAR_W = " + Math.max(0, state.advanced.charW) + "\n\n" +
+      "PROMPT_CHAR_W = " + (state.advanced.charW > 0 ? state.advanced.charW : 9.0) + "\n\n" +
       "# export GITHUB_LOGIN=" + state.login;
+  }
+
+  function buildReadmeSnippet(){
+    var login = (state.login || "kali").trim() || "kali";
+    var repo = (state.repo || "").trim() || (login + "/" + login);
+    return '<p align="center">\n<img src="https://raw.githubusercontent.com/' + repo + '/refs/heads/main/assets/profile.svg" alt="animated ascii profile card" width="100%" />\n</p>';
+  }
+
+  // ---- import: pull PROFILE_FIELDS-style tuples out of pasted Python text ----
+  function parsePyTuples(text){
+    var out = [];
+    var re = /\(\s*f?(["'])((?:\\.|(?!\1)[\s\S])*?)\1\s*,\s*f?(["'])((?:\\.|(?!\3)[\s\S])*?)\3\s*\)/g;
+    var m;
+    while ((m = re.exec(text))){ out.push([pyUnescape(m[2]), pyUnescape(m[4])]); }
+    return out;
+  }
+  // ---- import: pull a flat PROMPT_COMMANDS-style string list ------------------
+  function parsePyStringList(text){
+    var out = [];
+    var re = /f?(["'])((?:\\.|(?!\1)[\s\S])*?)\1/g;
+    var m;
+    while ((m = re.exec(text))){ out.push(pyUnescape(m[2])); }
+    return out;
   }
 
   // ---- DOM wiring -------------------------------------------------------------
   var $ = function(id){ return document.getElementById(id); };
   var svgHost = $("svgHost"), dimsText = $("dimsText");
-  var outPython = $("outPython"), outSvg = $("outSvg"), outConfig = $("outConfig");
+  var outPython = $("outPython"), outSvg = $("outSvg"), outConfig = $("outConfig"), outReadme = $("outReadme");
   var linkOpenSvg = $("linkOpenSvg");
   var renderTimer = null;
+  var lastSvgBlobUrl = null;
 
   function scheduleRender(){
     if (renderTimer) clearTimeout(renderTimer);
@@ -739,31 +484,41 @@ Part of the ascii-profile-card repository.
     if (!fields.length) fields = [["", ""]];
     var commands = state.promptCommands.filter(function(c){ return c.trim() !== ""; });
 
-    var svg = buildSvg(artRows.length ? artRows : asciiRowsDragon(), fields, login, state.colors, commands);
+    var svg = buildSvg(artRows.length ? artRows : currentArtRows(), fields, login, state.colors, commands);
+    $("svgHost").parentNode.classList.toggle("native-art-size", state.asciiArtIndex >= 0);
     svgHost.innerHTML = svg;
     outSvg.value = svg;
     outPython.value = buildPythonSnippet();
+    outReadme.value = buildReadmeSnippet();
 
     var wm = svg.match(/width="(\d+)"/), hm = svg.match(/height="(\d+)"/);
     dimsText.textContent = (wm ? wm[1] : "?") + " × " + (hm ? hm[1] : "?") + " px";
 
-    // linkOpenSvg.href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    if (lastSvgBlobUrl) URL.revokeObjectURL(lastSvgBlobUrl);
     var blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-    linkOpenSvg.href = URL.createObjectURL(blob);
-    
+    lastSvgBlobUrl = URL.createObjectURL(blob);
+    linkOpenSvg.href = lastSvgBlobUrl;
+
     outConfig.value = JSON.stringify({
-      login: state.login, fields: state.fields, promptCommands: state.promptCommands,
-      colors: state.colors, advanced: state.advanced, avatarDataUrl: state.avatarDataUrl
+      login: state.login, repo: state.repo, fields: state.fields, promptCommands: state.promptCommands,
+      colors: state.colors, advanced: state.advanced, asciiRamp: state.asciiRamp,
+      asciiArtIndex: state.asciiArtIndex, avatarDataUrl: state.avatarDataUrl
     }, null, 2);
   }
 
   // -- identity ---------------------------------------------------------------
   $("inpLogin").addEventListener("input", function(e){ state.login = e.target.value; scheduleRender(); });
+  $("inpRepo").addEventListener("input", function(e){ state.repo = e.target.value; scheduleRender(); });
 
   // -- avatar -------------------------------------------------------------------
   var dropzone = $("dropzone"), inpAvatar = $("inpAvatar");
   var avatarPreviewRow = $("avatarPreviewRow"), avatarThumb = $("avatarThumb"), avatarStatus = $("avatarStatus");
   var rerollRow = $("rerollRow"), dragonStatus = $("dragonStatus");
+
+  function updateArtStatus(){
+    var selected = state.asciiArtIndex >= 0 ? ART_COLLECTION[state.asciiArtIndex].name + " art" : "the procedural dragon glyph";
+    dragonStatus.textContent = "No avatar — using " + selected + ".";
+  }
 
   function setAvatarUiNone(){
     avatarPreviewRow.hidden = true;
@@ -810,7 +565,7 @@ Part of the ascii-profile-card repository.
     if (avatarImgEl){
       asciiRowsFromImage(avatarImgEl).then(function(rows){ artRows = rows; render(); });
     } else {
-      artRows = asciiRowsDragon();
+      artRows = currentArtRows();
       render();
     }
   }
@@ -828,30 +583,71 @@ Part of the ascii-profile-card repository.
   $("btnRemoveAvatar").addEventListener("click", function(){
     state.avatarDataUrl = null;
     avatarImgEl = null;
-    artRows = asciiRowsDragon();
+    artRows = currentArtRows();
     setAvatarUiNone();
-    dragonStatus.textContent = "No avatar — using the procedural dragon glyph.";
+    updateArtStatus();
     render();
   });
   $("btnReroll").addEventListener("click", function(){
-    artRows = asciiRowsDragon();
+    state.asciiArtIndex = ART_COLLECTION.length
+      ? (state.asciiArtIndex + 1) % ART_COLLECTION.length
+      : -1;
+    artRows = currentArtRows();
+    updateArtStatus();
     render();
   });
 
   // -- ASCII size & animation speed --------------------------------------------
   var rngArtCols = $("rngArtCols"), valArtCols = $("valArtCols");
   var inpTypeSpeed = $("inpTypeSpeed"), inpDeleteSpeed = $("inpDeleteSpeed"),
-      inpHoldTime = $("inpHoldTime"), inpGapTime = $("inpGapTime");
+      inpHoldTime = $("inpHoldTime"), inpGapTime = $("inpGapTime"), inpCharW = $("inpCharW");
+  var selRampPreset = $("selRampPreset"), inpRamp = $("inpRamp"), rampStatus = $("rampStatus");
   var resampleTimer = null;
 
   function syncAdvancedInputs(){
+    inpRamp.value = state.asciiRamp;
+    selRampPreset.value = Object.keys(RAMP_PRESETS).find(function(key){ return RAMP_PRESETS[key] === state.asciiRamp; }) || "custom";
+    rampStatus.textContent = "";
+    rampStatus.className = "statustext";
     rngArtCols.value = state.advanced.artCols;
     valArtCols.textContent = state.advanced.artCols;
     inpTypeSpeed.value = state.advanced.typeSpeed;
     inpDeleteSpeed.value = state.advanced.deleteSpeed;
     inpHoldTime.value = state.advanced.holdTime;
     inpGapTime.value = state.advanced.gapTime;
+    inpCharW.value = state.advanced.charW;
   }
+
+  function setRamp(value){
+    if (!/^[\x20-\x7e]{2,}$/.test(value)){
+      rampStatus.textContent = "Enter at least 2 printable ASCII characters.";
+      rampStatus.className = "statustext err";
+      return false;
+    }
+    state.asciiRamp = value;
+    RAMP = value;
+    selRampPreset.value = Object.keys(RAMP_PRESETS).find(function(key){ return RAMP_PRESETS[key] === value; }) || "custom";
+    rampStatus.textContent = "";
+    rampStatus.className = "statustext";
+    if (avatarImgEl){
+      if (resampleTimer) clearTimeout(resampleTimer);
+      resampleTimer = setTimeout(resampleArt, 120);
+    } else {
+      render();
+    }
+    return true;
+  }
+
+  selRampPreset.addEventListener("change", function(){
+    if (selRampPreset.value !== "custom"){
+      inpRamp.value = RAMP_PRESETS[selRampPreset.value];
+      setRamp(inpRamp.value);
+    }
+  });
+  inpRamp.addEventListener("input", function(){
+    if (selRampPreset.value !== "custom") selRampPreset.value = "custom";
+    setRamp(inpRamp.value);
+  });
 
   rngArtCols.addEventListener("input", function(){
     state.advanced.artCols = parseInt(rngArtCols.value, 10) || 40;
@@ -860,7 +656,7 @@ Part of the ascii-profile-card repository.
     if (resampleTimer) clearTimeout(resampleTimer);
     resampleTimer = setTimeout(resampleArt, 120);
   });
-  [[inpTypeSpeed,"typeSpeed"],[inpDeleteSpeed,"deleteSpeed"],[inpHoldTime,"holdTime"],[inpGapTime,"gapTime"]]
+  [[inpTypeSpeed,"typeSpeed"],[inpDeleteSpeed,"deleteSpeed"],[inpHoldTime,"holdTime"],[inpGapTime,"gapTime"],[inpCharW,"charW"]]
     .forEach(function(pair){
       pair[0].addEventListener("input", function(){
         var v = parseFloat(pair[0].value);
@@ -939,6 +735,21 @@ Part of the ascii-profile-card repository.
   }
   $("btnAddField").addEventListener("click", function(){ state.fields.push(["", ""]); renderFieldsList(); render(); });
 
+  $("btnImportFields").addEventListener("click", function(){
+    var raw = $("inpImportFields").value;
+    var status = $("importFieldsStatus");
+    var parsed = parsePyTuples(raw);
+    if (!parsed.length){
+      status.textContent = 'Couldn’t find any ("label", "value") pairs in that text.';
+      status.className = "statustext err";
+      return;
+    }
+    state.fields = parsed;
+    renderFieldsList(); render();
+    status.textContent = "Imported " + parsed.length + " field" + (parsed.length===1?"":"s") + ". Note: f-string placeholders like {LOGIN} are imported as literal text.";
+    status.className = "statustext ok";
+  });
+
   // -- prompt commands list editor --------------------------------------------
   var promptList = $("promptList");
   function renderPromptList(){
@@ -959,6 +770,21 @@ Part of the ascii-profile-card repository.
     $("promptCount").textContent = state.promptCommands.length + " line" + (state.promptCommands.length===1?"":"s");
   }
   $("btnAddPrompt").addEventListener("click", function(){ state.promptCommands.push("new role"); renderPromptList(); render(); });
+
+  $("btnImportPrompt").addEventListener("click", function(){
+    var raw = $("inpImportPrompt").value;
+    var status = $("importPromptStatus");
+    var parsed = parsePyStringList(raw);
+    if (!parsed.length){
+      status.textContent = "Couldn’t find any quoted strings in that text.";
+      status.className = "statustext err";
+      return;
+    }
+    state.promptCommands = parsed;
+    renderPromptList(); render();
+    status.textContent = "Imported " + parsed.length + " line" + (parsed.length===1?"":"s") + ".";
+    status.className = "statustext ok";
+  });
 
   // -- palette editor -----------------------------------------------------------
   function bindColorPair(pickId, textId, key){
@@ -991,6 +817,39 @@ Part of the ascii-profile-card repository.
     });
   }
 
+  function applyTheme(theme){
+    state.colors = {
+      bg: theme.colors.bg, titlebar: theme.colors.titlebar, titleText: theme.colors.titleText,
+      accent: theme.colors.accent, header: theme.colors.header, label: theme.colors.label, value: theme.colors.value,
+      palette: theme.colors.palette.slice()
+    };
+    Object.keys(COLOR_KEY_TO_ID).forEach(function(key){
+      var suffix = COLOR_KEY_TO_ID[key];
+      $("pick" + suffix).value = state.colors[key];
+      $("text" + suffix).value = state.colors[key];
+    });
+    renderPalette();
+    render();
+  }
+
+  var themePresetsHost = $("themePresets");
+  function renderThemePresets(){
+    themePresetsHost.innerHTML = "";
+    THEMES.forEach(function(theme){
+      var chip = document.createElement("button");
+      chip.type = "button"; chip.className = "themechip"; chip.title = "Apply the " + theme.name + " theme";
+      var sw = document.createElement("div"); sw.className = "swatches";
+      [theme.colors.bg, theme.colors.header, theme.colors.accent, theme.colors.value].forEach(function(c){
+        var s = document.createElement("span"); s.className = "sw"; s.style.background = c;
+        sw.appendChild(s);
+      });
+      var name = document.createElement("span"); name.className = "name"; name.textContent = theme.name;
+      chip.appendChild(sw); chip.appendChild(name);
+      chip.addEventListener("click", function(){ applyTheme(theme); });
+      themePresetsHost.appendChild(chip);
+    });
+  }
+
   // -- export tabs -----------------------------------------------------------
   document.querySelectorAll(".exporttab").forEach(function(tab){
     tab.addEventListener("click", function(){
@@ -1012,6 +871,7 @@ Part of the ascii-profile-card repository.
     } else { done(false); }
   }
   $("btnCopyPython").addEventListener("click", function(){ copyText(outPython.value, this); });
+  $("btnCopyReadme").addEventListener("click", function(){ copyText(outReadme.value, this); });
   $("btnCopySvg").addEventListener("click", function(){ copyText(outSvg.value, this); });
   $("btnCopyConfig").addEventListener("click", function(){ copyText(outConfig.value, this); });
 
@@ -1024,13 +884,26 @@ Part of the ascii-profile-card repository.
   }
 
   function applyConfig(cfg){
-    if (!cfg || typeof cfg !== "object") throw new Error("bukan objek JSON yang valid");
+    if (!cfg || typeof cfg !== "object") throw new Error("not a valid JSON object");
     state.login = typeof cfg.login === "string" ? cfg.login : state.login;
+    state.repo = typeof cfg.repo === "string" ? cfg.repo : state.repo;
     if (Array.isArray(cfg.fields)) state.fields = cfg.fields;
     if (Array.isArray(cfg.promptCommands)) state.promptCommands = cfg.promptCommands;
     if (cfg.colors && typeof cfg.colors === "object") state.colors = Object.assign({}, state.colors, cfg.colors);
     if (cfg.advanced && typeof cfg.advanced === "object") state.advanced = Object.assign({}, state.advanced, cfg.advanced);
+    if (typeof cfg.asciiRamp === "string"){
+      if (!/^[\x20-\x7e]{2,}$/.test(cfg.asciiRamp)) throw new Error("ASCII ramp must contain at least 2 printable ASCII characters.");
+      state.asciiRamp = cfg.asciiRamp;
+    }
+    if (cfg.asciiArtIndex === undefined){
+      state.asciiArtIndex = -1;
+    } else if (Number.isInteger(cfg.asciiArtIndex) && cfg.asciiArtIndex >= -1 && cfg.asciiArtIndex < ART_COLLECTION.length){
+      state.asciiArtIndex = cfg.asciiArtIndex;
+    } else {
+      throw new Error("ASCII art selection is not valid for the current collection.");
+    }
     $("inpLogin").value = state.login;
+    $("inpRepo").value = state.repo;
     renderFieldsList(); renderPromptList(); renderPalette(); syncAdvancedInputs(); syncAdvancedGlobals();
     bindColorPair("pickBg","textBg","bg"); bindColorPair("pickTitlebar","textTitlebar","titlebar");
     bindColorPair("pickTitleText","textTitleText","titleText"); bindColorPair("pickAccent","textAccent","accent");
@@ -1050,7 +923,7 @@ Part of the ascii-profile-card repository.
       img.src = cfg.avatarDataUrl;
     } else {
       avatarImgEl = null;
-      state.avatarDataUrl = null; artRows = asciiRowsDragon(); setAvatarUiNone(); render();
+      state.avatarDataUrl = null; artRows = currentArtRows(); setAvatarUiNone(); updateArtStatus(); render();
     }
   }
 
@@ -1060,14 +933,14 @@ Part of the ascii-profile-card repository.
     var reader = new FileReader();
     reader.onload = function(){
       try { applyConfig(JSON.parse(reader.result)); setConfigStatus("Configuration loaded from " + file.name + ".", true); }
-      catch(err){ setConfigStatus("Failed to read the file: " + err.message, false); }
+      catch(err){ setConfigStatus("Failed to read that file: " + err.message, false); }
     };
-    reader.onerror = function(){ setConfigStatus("Failed to read the file.", false); };
+    reader.onerror = function(){ setConfigStatus("Failed to read that file.", false); };
     reader.readAsText(file);
   });
   $("btnApplyConfig").addEventListener("click", function(){
     var raw = $("inpConfigPaste").value.trim();
-    if (!raw){ setConfigStatus("Please paste the JSON config into the box above.", false); return; }
+    if (!raw){ setConfigStatus("Paste the JSON config into the box above first.", false); return; }
     try { applyConfig(JSON.parse(raw)); setConfigStatus("Configuration applied.", true); }
     catch(err){ setConfigStatus("Invalid JSON: " + err.message, false); }
   });
@@ -1079,9 +952,10 @@ Part of the ascii-profile-card repository.
     syncAdvancedGlobals();
     artRows = asciiRowsDragon();
     $("inpLogin").value = state.login;
+    $("inpRepo").value = state.repo;
     $("inpToken").value = "";
     setAvatarUiNone();
-    dragonStatus.textContent = "No avatar — using the procedural dragon glyph.";
+    updateArtStatus();
     setConfigStatus("");
     renderFieldsList(); renderPromptList(); renderPalette(); syncAdvancedInputs();
     bindColorPair("pickBg","textBg","bg"); bindColorPair("pickTitlebar","textTitlebar","titlebar");
@@ -1094,13 +968,17 @@ Part of the ascii-profile-card repository.
   // ---- boot ---------------------------------------------------------------
   syncAdvancedGlobals();
   syncAdvancedInputs();
+  renderThemePresets();
   artRows = asciiRowsDragon();
   renderFieldsList();
   renderPromptList();
   renderPalette();
   render();
 
-})();
-</script>
+  window.addEventListener("load", function () {
+    setTimeout(function () {
+      document.querySelector(".loader-overlay").classList.add("is-hidden");
+    }, 2000);
+  });
 
-</body></html>
+})();

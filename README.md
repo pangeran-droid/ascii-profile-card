@@ -15,13 +15,24 @@ a typing prompt, and pulls in live GitHub stats — all rendered as a single sel
 
 ![Example card](https://raw.githubusercontent.com/pangeran-droid/ascii-profile-card/refs/heads/main/assets/profile.svg)
 
-<details>
-<summary>ascii-profile-card v2</summary>
-<br>
+![Example web version](https://raw.githubusercontent.com/pangeran-droid/ascii-profile-card/refs/heads/main/web-version/assets/images/preview.png)
 
-<img src="https://raw.githubusercontent.com/pangeran-droid/ascii-profile-card/refs/heads/main/assets/profile_v2.svg" alt="Example card V2">
+## Web studio
 
-</details>
+The browser-based editor is available in [`web-version/`](web-version/) and can also be deployed
+as a static site (for example, with GitHub Pages). It includes a live SVG preview, editable profile
+fields and themes, avatar-to-ASCII conversion, Python/config export, and PNG download at 1×, 2×, or
+3× resolution.
+
+The editor autosaves the current design in that browser's local storage. Undo and redo are available
+from the toolbar or with `Ctrl+Z` / `Ctrl+Y` (`Cmd+Z` / `Cmd+Shift+Z` on macOS). Use **Create share
+link** in the **Save / load config** tab to share a design; the link contains the design, not the
+original avatar image or GitHub token. If an avatar is set, its converted ASCII art is included
+instead. Designs and autosaves are local to each browser and are not shared with other visitors.
+
+The web editor fetches public repository statistics across all GitHub API pages without a token.
+A token is optional and is only needed there for contribution totals. The Python generator uses
+`GITHUB_TOKEN` for live stats; without it those values remain `N/A`.
 
 ## Quick start
 
@@ -80,8 +91,8 @@ needed — the workflow uses the repo's default `GITHUB_TOKEN`.
 1. Loads `assets/avatar.*` (via `Pillow`), crops it square, and downsamples it into a shaded ASCII
    grid using a fixed character ramp — or generates a procedural dragon silhouette if no avatar is
    found.
-2. Fetches live stats (repos, stars, followers, top languages) from the GitHub REST API via
-   `requests`, when `GITHUB_TOKEN` is set.
+2. When `GITHUB_TOKEN` is set, fetches live stats (repos, stars, followers, top languages) from the
+   GitHub API via `requests`, following pagination so all repository pages are included.
 3. Builds a single SVG: terminal window chrome (title bar, traffic-light dots), the ASCII art, a
    Kali-style `login@github` header, a field list, a color swatch strip, and an animated typing
    prompt — all pure CSS `@keyframes`, no JavaScript.

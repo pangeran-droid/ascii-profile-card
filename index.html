@@ -63,10 +63,12 @@
   <div class="topbar">
     <div class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
     <div class="titles">
-      <h1>ASCII Card Studio — v1.2</h1>
+      <h1>ASCII Card Studio — v1.4</h1>
       <p>Visually design the Kali-styled README card, then copy the config straight back into <code class="inline">profile.svg</code>'s generator script.</p>
     </div>
     <div class="actions">
+      <button class="btn" id="btnUndo" type="button" disabled title="Undo (Ctrl+Z)">Undo</button>
+      <button class="btn" id="btnRedo" type="button" disabled title="Redo (Ctrl+Y)">Redo</button>
       <button class="btn" id="btnReset" type="button">Reset defaults</button>
     </div>
   </div>
@@ -135,7 +137,7 @@
           <div class="row">
             <button class="btn grow" id="btnFetchStats" type="button">Fetch live stats</button>
           </div>
-          <div class="statustext" id="statsStatus">Repos / Stars / Followers / Languages fill in below on fetch. Contributions is best entered by hand — the contributions API needs a server-side call.</div>
+          <div class="statustext" id="statsStatus">Fetches Repos / Stars / Followers / Languages. Add a token to fetch GitHub Contributions too; it is sent directly to api.github.com and is not saved by this page.</div>
         </div>
       </details>
 
@@ -259,6 +261,7 @@
           <button class="exporttab" data-pane="svg" type="button">SVG markup</button>
           <button class="exporttab" data-pane="config" type="button">Save / load config</button>
         </div>
+        <div class="statustext autosave-status" id="autosaveStatus" role="status" aria-live="polite">Autosaves on this device. GitHub token is never saved.</div>
 
         <div class="exportpane active" data-pane="python">
           <p>Drop this into the script in place of <code class="inline">PROFILE_FIELDS</code>, <code class="inline">PROMPT_COMMANDS</code>, and the color/size constants.</p>
@@ -274,16 +277,34 @@
         </div>
 
         <div class="exportpane" data-pane="svg">
-          <p>Download links can't trigger a save from inside this preview — copy the markup, or open it in a new tab and use the browser's "Save As".</p>
+          <p>Copy the SVG markup or download a static PNG. Choose a scale for a higher-resolution image.</p>
           <textarea id="outSvg" readonly spellcheck="false"></textarea>
           <div class="row">
             <a class="btn small ghost" id="linkOpenSvg" target="_blank" rel="noopener">Open in new tab</a>
             <button class="btn small" id="btnCopySvg" type="button">Copy markup</button>
           </div>
+          <div class="row">
+            <label class="png-scale">
+              <span class="lbl">PNG scale</span>
+              <select id="selPngScale" aria-label="PNG export scale">
+                <option value="1">1×</option>
+                <option value="2">2×</option>
+                <option value="3">3×</option>
+              </select>
+            </label>
+            <button class="btn small primary" id="btnDownloadPng" type="button">Download PNG</button>
+          </div>
+          <div class="statustext" id="pngDownloadStatus" role="status" aria-live="polite"></div>
         </div>
 
         <div class="exportpane" data-pane="config">
           <p>Save your in-progress design to come back to later, including the avatar.</p>
+          <div class="sharebox">
+            <p>Create a link that opens this design in another browser. The original avatar image and GitHub token are never included; an avatar is shared as ASCII art.</p>
+            <div class="row"><button class="btn small" id="btnCreateShareLink" type="button">Create share link</button></div>
+            <textarea id="outShareLink" readonly spellcheck="false" aria-label="Share link" placeholder="Your share link will appear here"></textarea>
+            <div class="statustext" id="shareStatus" role="status" aria-live="polite"></div>
+          </div>
           <textarea id="outConfig" readonly spellcheck="false"></textarea>
           <div class="row">
             <label class="btn small ghost" style="cursor:pointer">Load file<input type="file" id="inpConfigFile" accept="application/json" hidden></label>

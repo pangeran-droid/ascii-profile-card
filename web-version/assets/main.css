@@ -152,6 +152,7 @@
   .stagebody.native-art-size svg{max-width:none}
 
   .exporttabs{display:flex;gap:6px;padding:10px 14px 0;flex-wrap:wrap}
+  .autosave-status{padding:7px 14px 0}
   .exporttab{
     font-family:var(--font-display);font-size:11.5px;font-weight:600;color:var(--muted);
     background:transparent;border:1px solid var(--border-soft);border-radius:7px;padding:6px 10px;cursor:pointer;
@@ -162,6 +163,12 @@
   .exportpane textarea{height:150px;font-size:11.5px}
   .exportpane p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.5}
   .exportpane .row{justify-content:flex-end}
+  .sharebox{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--panel-2)}
+  .sharebox textarea{height:64px;overflow-wrap:anywhere}
+  .sharebox .row{justify-content:flex-start}
+  .png-scale{display:flex;align-items:center;gap:7px;margin-right:auto}
+  .png-scale .lbl{font-size:11px;color:var(--muted);font-family:var(--font-mono)}
+  .png-scale select{min-width:64px}
 
   code.inline{font-family:var(--font-mono);background:var(--panel-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;font-size:11.5px}
   .foot{margin-top:18px;font-size:11.5px;color:var(--muted-2);line-height:1.6;text-align:center}

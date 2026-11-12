@@ -66,7 +66,8 @@
       },
       asciiRamp: RAMP_PRESETS.default,
       asciiArtIndex: -1,
-      avatarDataUrl: null
+      avatarDataUrl: null,
+      sharedArtRows: false
     };
   }
   var state = defaultState();
@@ -195,6 +196,65 @@
       : asciiRowsDragon();
   }
 
+  function lanczos(x){
+    x = Math.abs(x);
+    if (x < 1e-8) return 1;
+    if (x >= 3) return 0;
+    var px = Math.PI * x;
+    return (Math.sin(px) / px) * (Math.sin(px / 3) / (px / 3));
+  }
+
+  function lanczosContributions(srcSize, dstSize){
+    var scale = srcSize / dstSize;
+    var filterScale = Math.max(1, scale);
+    var support = 3 * filterScale;
+    var contributions = [];
+    for (var dst = 0; dst < dstSize; dst++){
+      var center = (dst + 0.5) * scale;
+      var first = Math.max(0, Math.floor(center - support + 0.5));
+      var last = Math.min(srcSize, Math.floor(center + support + 0.5));
+      var weights = [], total = 0;
+      for (var src = first; src < last; src++){
+        var weight = lanczos((src + 0.5 - center) / filterScale);
+        weights.push(weight);
+        total += weight;
+      }
+      contributions.push({
+        first: first,
+        weights: weights.map(function(weight){ return weight / total; })
+      });
+    }
+    return contributions;
+  }
+
+  function resizeLanczosChannel(channel, srcWidth, srcHeight, dstWidth, dstHeight){
+    var xContrib = lanczosContributions(srcWidth, dstWidth);
+    var yContrib = lanczosContributions(srcHeight, dstHeight);
+    var horizontal = new Uint8Array(dstWidth * srcHeight);
+    var output = new Uint8Array(dstWidth * dstHeight);
+
+    for (var y = 0; y < srcHeight; y++){
+      for (var x = 0; x < dstWidth; x++){
+        var xInfo = xContrib[x], xSum = 0;
+        for (var xi = 0; xi < xInfo.weights.length; xi++){
+          xSum += channel[y * srcWidth + xInfo.first + xi] * xInfo.weights[xi];
+        }
+        horizontal[y * dstWidth + x] = clamp(Math.round(xSum), 0, 255);
+      }
+    }
+    for (var dy = 0; dy < dstHeight; dy++){
+      var yInfo = yContrib[dy];
+      for (var dx = 0; dx < dstWidth; dx++){
+        var ySum = 0;
+        for (var yi = 0; yi < yInfo.weights.length; yi++){
+          ySum += horizontal[(yInfo.first + yi) * dstWidth + dx] * yInfo.weights[yi];
+        }
+        output[dy * dstWidth + dx] = clamp(Math.round(ySum), 0, 255);
+      }
+    }
+    return output;
+  }
+
   // ---- avatar -> ASCII art via canvas ---------------------------------------
   function asciiRowsFromImage(img){
     return new Promise(function(resolve){
@@ -216,8 +276,8 @@
       var hasRealAlpha = minAlpha < 250;
 
       var n = outSide * outSide;
-      var alphaArr = new Float32Array(n);
-      var grayArr = new Float32Array(n);
+      var alphaArr = new Uint8Array(n);
+      var grayArr = new Uint8Array(n);
 
       if (hasRealAlpha){
         for (var p0 = 0, idx0 = 3; p0 < n; p0++, idx0 += 4) alphaArr[p0] = data[idx0];
@@ -238,46 +298,26 @@
           var k2 = (y2*outSide+x2)*4;
           var dr = data[k2]-br, dg = data[k2+1]-bgc, db = data[k2+2]-bb;
           var dist = Math.sqrt(dr*dr+dg*dg+db*db);
-          alphaArr[y2*outSide+x2] = clamp((dist - 42.0) * 6.0, 0, 255);
+          alphaArr[y2*outSide+x2] = Math.floor(clamp((dist - 42.0) * 6.0, 0, 255));
         }
       }
       for (var p1 = 0, idx1 = 0; p1 < n; p1++, idx1 += 4){
-        grayArr[p1] = data[idx1]*0.299 + data[idx1+1]*0.587 + data[idx1+2]*0.114;
+        grayArr[p1] = (19595*data[idx1] + 38470*data[idx1+1] + 7471*data[idx1+2] + 32768) >> 16;
       }
 
       var rowsN = Math.max(1, Math.round(ART_COLS * (CELL_W / CELL_H)));
-
-      function resizeChannel(arr){
-        var src = document.createElement("canvas");
-        src.width = outSide; src.height = outSide;
-        var sctx = src.getContext("2d");
-        var sdata = sctx.createImageData(outSide, outSide);
-        for (var q = 0; q < arr.length; q++){
-          var v = clamp(Math.round(arr[q]), 0, 255);
-          sdata.data[q*4] = v; sdata.data[q*4+1] = v; sdata.data[q*4+2] = v; sdata.data[q*4+3] = 255;
-        }
-        sctx.putImageData(sdata, 0, 0);
-        var dst = document.createElement("canvas");
-        dst.width = ART_COLS; dst.height = rowsN;
-        var dctx = dst.getContext("2d");
-        dctx.imageSmoothingEnabled = true;
-        try { dctx.imageSmoothingQuality = "high"; } catch(e){}
-        dctx.drawImage(src, 0, 0, outSide, outSide, 0, 0, ART_COLS, rowsN);
-        return dctx.getImageData(0, 0, ART_COLS, rowsN).data;
-      }
-
-      var alphaSmall = resizeChannel(alphaArr);
-      var graySmall = resizeChannel(grayArr);
+      var alphaSmall = resizeLanczosChannel(alphaArr, outSide, outSide, ART_COLS, rowsN);
+      var graySmall = resizeLanczosChannel(grayArr, outSide, outSide, ART_COLS, rowsN);
 
       var rows = [];
       for (var ry = 0; ry < rowsN; ry++){
         var line = "";
         for (var rx = 0; rx < ART_COLS; rx++){
-          var pp = (ry*ART_COLS+rx)*4;
+          var pp = ry*ART_COLS+rx;
           var fg = alphaSmall[pp] / 255.0;
           if (fg < 0.22){ line += " "; continue; }
           var lum = graySmall[pp] / 255.0;
-          var ci = Math.min(RAMP.length - 1, Math.floor(lum * (RAMP.length - 1)));
+          var ci = Math.min(RAMP.length - 2, Math.floor(lum * (RAMP.length - 1)));
           line += RAMP[ci];
         }
         rows.push(line);
@@ -469,8 +509,196 @@
   var svgHost = $("svgHost"), dimsText = $("dimsText");
   var outPython = $("outPython"), outSvg = $("outSvg"), outConfig = $("outConfig"), outReadme = $("outReadme");
   var linkOpenSvg = $("linkOpenSvg");
+  var btnDownloadPng = $("btnDownloadPng"), pngDownloadStatus = $("pngDownloadStatus");
+  var selPngScale = $("selPngScale");
+  var autosaveStatus = $("autosaveStatus");
+  var btnUndo = $("btnUndo"), btnRedo = $("btnRedo");
+  var btnCreateShareLink = $("btnCreateShareLink");
+  var outShareLink = $("outShareLink"), shareStatus = $("shareStatus");
+  var AUTOSAVE_KEY = "ascii-card-studio.autosave.v1";
+  var HISTORY_LIMIT = 30;
+  var undoHistory = [], redoHistory = [];
+  var lastHistorySnapshot = null, restoringHistory = false;
   var renderTimer = null;
   var lastSvgBlobUrl = null;
+
+  function updateHistoryButtons(){
+    btnUndo.disabled = undoHistory.length === 0;
+    btnRedo.disabled = redoHistory.length === 0;
+    btnUndo.title = undoHistory.length ? "Undo (Ctrl+Z)" : "Nothing to undo";
+    btnRedo.title = redoHistory.length ? "Redo (Ctrl+Y)" : "Nothing to redo";
+  }
+
+  function setAutosaveStatus(message, ok){
+    autosaveStatus.textContent = message;
+    autosaveStatus.className = "statustext autosave-status" + (ok === true ? " ok" : ok === false ? " err" : "");
+  }
+
+  function serializeConfig(){
+    var config = {
+      login: state.login, repo: state.repo, fields: state.fields, promptCommands: state.promptCommands,
+      colors: state.colors, advanced: state.advanced, asciiRamp: state.asciiRamp,
+      asciiArtIndex: state.asciiArtIndex, avatarDataUrl: state.avatarDataUrl,
+      sharedArtRows: state.sharedArtRows,
+      pngScale: Number(selPngScale.value) || 1
+    };
+    if (state.sharedArtRows || (state.asciiArtIndex < 0 && !state.avatarDataUrl)) config.asciiArtRows = artRows;
+    return JSON.stringify(config, null, 2);
+  }
+
+  function createShareLink(){
+    var config = JSON.parse(serializeConfig());
+    config.avatarDataUrl = null;
+    if (state.avatarDataUrl || state.asciiArtIndex < 0){
+      config.asciiArtIndex = -1;
+      config.sharedArtRows = true;
+      config.asciiArtRows = artRows;
+    } else {
+      config.sharedArtRows = false;
+      delete config.asciiArtRows;
+    }
+
+    var bytes = new TextEncoder().encode(JSON.stringify(config));
+    if (bytes.length > 6000){
+      shareStatus.textContent = "This design is too large to share in a link. Use Save / load config to export it instead.";
+      shareStatus.className = "statustext err";
+      return;
+    }
+    var binary = "";
+    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    var encoded = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    var url = window.location.href.split("#")[0] + "#design=" + encoded;
+    if (url.length > 8000){
+      shareStatus.textContent = "This design creates a link that is too long. Use Save / load config to export it instead.";
+      shareStatus.className = "statustext err";
+      return;
+    }
+    outShareLink.value = url;
+    outShareLink.focus();
+    outShareLink.select();
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){
+        shareStatus.textContent = "Share link copied. Anyone with the link can view this design.";
+        shareStatus.className = "statustext ok";
+      }).catch(function(){
+        shareStatus.textContent = "Link created. Copy it from the box above; anyone with it can view this design.";
+        shareStatus.className = "statustext";
+      });
+    } else {
+      shareStatus.textContent = "Link created. Copy it from the box above; anyone with it can view this design.";
+      shareStatus.className = "statustext";
+    }
+  }
+
+  function readShareLink(){
+    var prefix = "#design=";
+    if (window.location.hash.indexOf(prefix) !== 0) return false;
+    try {
+      var encoded = window.location.hash.slice(prefix.length).replace(/-/g, "+").replace(/_/g, "/");
+      while (encoded.length % 4) encoded += "=";
+      var binary = atob(encoded), bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      applyConfig(JSON.parse(new TextDecoder().decode(bytes)));
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      setConfigStatus("Shared design loaded.", true);
+      shareStatus.textContent = "Shared design loaded. Your local saved design was not used.";
+      shareStatus.className = "statustext ok";
+      return true;
+    } catch(err){
+      setConfigStatus("Could not load the shared design: " + err.message, false);
+      shareStatus.textContent = "Could not load the shared design: " + err.message;
+      shareStatus.className = "statustext err";
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      return false;
+    }
+  }
+
+  function saveAutosave(){
+    try {
+      window.localStorage.setItem(AUTOSAVE_KEY, serializeConfig());
+      setAutosaveStatus("Design autosaved on this device. GitHub token is never saved.", true);
+    } catch(err){
+      setAutosaveStatus("Autosave failed: " + err.message + ". Use Save / load config to export a backup.", false);
+    }
+  }
+
+  function cardFilename(extension){
+    var stem = (state.login || "").trim().replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "profile-card";
+    return stem + "." + extension;
+  }
+
+  function downloadPng(){
+    btnDownloadPng.disabled = true;
+    pngDownloadStatus.textContent = "Preparing PNG…";
+    pngDownloadStatus.className = "statustext";
+
+    var parser = new DOMParser();
+    var svgDoc = parser.parseFromString(outSvg.value, "image/svg+xml");
+    if (svgDoc.querySelector("parsererror")){
+      btnDownloadPng.disabled = false;
+      pngDownloadStatus.textContent = "PNG export failed: the generated SVG is invalid.";
+      pngDownloadStatus.className = "statustext err";
+      return;
+    }
+
+    var svg = svgDoc.documentElement;
+    var scale = Number(selPngScale.value) || 1;
+    var promptCommands = svg.querySelectorAll(".promptcmd");
+    for (var i = 0; i < promptCommands.length - 1; i++) promptCommands[i].setAttribute("display", "none");
+
+    var exportStyle = svgDoc.createElementNS("http://www.w3.org/2000/svg", "style");
+    exportStyle.textContent = "* { animation: none !important; opacity: 1 !important; } .promptcursor { display: none !important; }";
+    svg.querySelector("defs").appendChild(exportStyle);
+
+    var serialized = new XMLSerializer().serializeToString(svg);
+    var svgUrl = URL.createObjectURL(new Blob([serialized], { type: "image/svg+xml;charset=utf-8" }));
+    var image = new Image();
+    image.onload = function(){
+      var canvas = document.createElement("canvas");
+      canvas.width = Number(svg.getAttribute("width")) * scale;
+      canvas.height = Number(svg.getAttribute("height")) * scale;
+      var context = canvas.getContext("2d");
+      if (!context){
+        URL.revokeObjectURL(svgUrl);
+        btnDownloadPng.disabled = false;
+        pngDownloadStatus.textContent = "PNG export failed: the browser could not create a canvas.";
+        pngDownloadStatus.className = "statustext err";
+        return;
+      }
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      if (typeof canvas.toBlob !== "function"){
+        URL.revokeObjectURL(svgUrl);
+        btnDownloadPng.disabled = false;
+        pngDownloadStatus.textContent = "PNG export failed: this browser does not support canvas image export.";
+        pngDownloadStatus.className = "statustext err";
+        return;
+      }
+      canvas.toBlob(function(blob){
+        URL.revokeObjectURL(svgUrl);
+        btnDownloadPng.disabled = false;
+        if (!blob){
+          pngDownloadStatus.textContent = "PNG export failed: the browser could not encode the image.";
+          pngDownloadStatus.className = "statustext err";
+          return;
+        }
+        var pngUrl = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = pngUrl;
+        link.download = cardFilename("png");
+        link.click();
+        setTimeout(function(){ URL.revokeObjectURL(pngUrl); }, 1000);
+        pngDownloadStatus.textContent = "PNG downloaded at " + canvas.width + " × " + canvas.height + " px (" + scale + "×).";
+        pngDownloadStatus.className = "statustext ok";
+      }, "image/png");
+    };
+    image.onerror = function(){
+      URL.revokeObjectURL(svgUrl);
+      btnDownloadPng.disabled = false;
+      pngDownloadStatus.textContent = "PNG export failed: the browser could not render the SVG.";
+      pngDownloadStatus.className = "statustext err";
+    };
+    image.src = svgUrl;
+  }
 
   function scheduleRender(){
     if (renderTimer) clearTimeout(renderTimer);
@@ -499,11 +727,15 @@
     lastSvgBlobUrl = URL.createObjectURL(blob);
     linkOpenSvg.href = lastSvgBlobUrl;
 
-    outConfig.value = JSON.stringify({
-      login: state.login, repo: state.repo, fields: state.fields, promptCommands: state.promptCommands,
-      colors: state.colors, advanced: state.advanced, asciiRamp: state.asciiRamp,
-      asciiArtIndex: state.asciiArtIndex, avatarDataUrl: state.avatarDataUrl
-    }, null, 2);
+    outConfig.value = serializeConfig();
+    if (lastHistorySnapshot !== null && outConfig.value !== lastHistorySnapshot && !restoringHistory){
+      undoHistory.push(lastHistorySnapshot);
+      if (undoHistory.length > HISTORY_LIMIT) undoHistory.shift();
+      redoHistory.length = 0;
+    }
+    lastHistorySnapshot = outConfig.value;
+    updateHistoryButtons();
+    saveAutosave();
   }
 
   // -- identity ---------------------------------------------------------------
@@ -516,7 +748,9 @@
   var rerollRow = $("rerollRow"), dragonStatus = $("dragonStatus");
 
   function updateArtStatus(){
-    var selected = state.asciiArtIndex >= 0 ? ART_COLLECTION[state.asciiArtIndex].name + " art" : "the procedural dragon glyph";
+    var selected = state.sharedArtRows
+      ? "ASCII art from a shared design"
+      : state.asciiArtIndex >= 0 ? ART_COLLECTION[state.asciiArtIndex].name + " art" : "the procedural dragon glyph";
     dragonStatus.textContent = "No avatar — using " + selected + ".";
   }
 
@@ -543,6 +777,7 @@
         asciiRowsFromImage(img).then(function(rows){
           artRows = rows;
           state.avatarDataUrl = dataUrl;
+          state.sharedArtRows = false;
           avatarThumb.src = dataUrl;
           setAvatarUiSet();
           avatarStatus.textContent = "Converted to " + ART_COLS + "-column ASCII art.";
@@ -564,6 +799,8 @@
   function resampleArt(){
     if (avatarImgEl){
       asciiRowsFromImage(avatarImgEl).then(function(rows){ artRows = rows; render(); });
+    } else if (state.sharedArtRows){
+      render();
     } else {
       artRows = currentArtRows();
       render();
@@ -583,12 +820,14 @@
   $("btnRemoveAvatar").addEventListener("click", function(){
     state.avatarDataUrl = null;
     avatarImgEl = null;
+    state.sharedArtRows = false;
     artRows = currentArtRows();
     setAvatarUiNone();
     updateArtStatus();
     render();
   });
   $("btnReroll").addEventListener("click", function(){
+    state.sharedArtRows = false;
     state.asciiArtIndex = ART_COLLECTION.length
       ? (state.asciiArtIndex + 1) % ART_COLLECTION.length
       : -1;
@@ -677,17 +916,73 @@
 
     btn.disabled = true; status.textContent = "Fetching…"; status.className = "statustext";
 
+    function fetchContributions(){
+      var year = new Date().getUTCFullYear();
+      var query = "query($login: String!, $from: DateTime!, $to: DateTime!) {" +
+        " user(login: $login) { contributionsCollection(from: $from, to: $to) {" +
+        " contributionCalendar { totalContributions } } } }";
+      var graphqlHeaders = Object.assign({}, headers, { "Content-Type": "application/json" });
+      return fetch("https://api.github.com/graphql", {
+        method: "POST",
+        headers: graphqlHeaders,
+        body: JSON.stringify({
+          query: query,
+          variables: {
+            login: login,
+            from: year + "-01-01T00:00:00Z",
+            to: year + "-12-31T23:59:59Z"
+          }
+        })
+      }).then(function(r){
+        if (!r.ok) throw new Error("contributions " + r.status);
+        return r.json();
+      }).then(function(data){
+        if (data.errors && data.errors.length) throw new Error("GitHub GraphQL rejected the contributions query");
+        var user = data.data && data.data.user;
+        var total = user && user.contributionsCollection &&
+          user.contributionsCollection.contributionCalendar &&
+          user.contributionsCollection.contributionCalendar.totalContributions;
+        if (total == null) throw new Error("GitHub returned no contribution total");
+        return String(total);
+      });
+    }
+
     function setField(label, value){
       var row = state.fields.find(function(f){ return f[0] === label; });
       if (row) row[1] = value;
       else state.fields.push([label, value]);
     }
 
+    function fetchAllRepos(url, pageNumber, repos){
+      return fetch(url, { headers: headers }).then(function(r){
+        if (!r.ok) throw new Error("repos page " + pageNumber + " " + r.status);
+        var linkHeader = r.headers.get("Link") || "";
+        return r.json().then(function(pageRepos){
+          if (!Array.isArray(pageRepos)) throw new Error("repos page " + pageNumber + " returned invalid data");
+          var allRepos = repos.concat(pageRepos);
+          var nextLink = linkHeader.match(/<([^>]+)>;\s*rel="?next"?/);
+          if (!nextLink) return allRepos;
+          var nextUrl = new URL(nextLink[1]);
+          if (nextUrl.protocol !== "https:" || nextUrl.hostname !== "api.github.com"){
+            throw new Error("repos pagination returned an unexpected URL");
+          }
+          return fetchAllRepos(nextUrl.href, pageNumber + 1, allRepos);
+        });
+      });
+    }
+
+    var contributionResult = token
+      ? fetchContributions().then(function(value){ return { value: value, error: null }; },
+          function(err){ return { value: null, error: err.message }; })
+      : Promise.resolve({ value: null, error: null });
+
     Promise.all([
       fetch("https://api.github.com/users/" + encodeURIComponent(login), { headers: headers }).then(function(r){ if(!r.ok) throw new Error("user " + r.status); return r.json(); }),
-      fetch("https://api.github.com/users/" + encodeURIComponent(login) + "/repos?per_page=100&type=owner", { headers: headers }).then(function(r){ if(!r.ok) throw new Error("repos " + r.status); return r.json(); })
+      fetchAllRepos("https://api.github.com/users/" + encodeURIComponent(login) + "/repos?per_page=100&type=owner", 1, []),
+      contributionResult
     ]).then(function(res){
       var user = res[0], repos = res[1];
+      var contributions = res[2];
       setField("GitHub.Followers", String(user.followers != null ? user.followers : "N/A"));
       setField("GitHub.Repos", String(user.public_repos != null ? user.public_repos : "N/A"));
       var stars = 0;
@@ -699,9 +994,18 @@
       setField("GitHub.Stars", String(stars));
       var topLangs = Object.keys(langCount).sort(function(a,b){ return langCount[b]-langCount[a]; }).slice(0,4);
       setField("GitHub.Languages", topLangs.length ? topLangs.join(", ") : "N/A");
+      if (contributions.value != null) setField("GitHub.Contributions", contributions.value);
       renderFieldsList();
-      status.textContent = "Updated Repos / Stars / Followers / Languages. Contributions still needs a manual entry.";
-      status.className = "statustext ok";
+      if (!token){
+        status.textContent = "Updated stats across all repository pages. Add a token to fetch contributions; the existing value was left unchanged.";
+        status.className = "statustext";
+      } else if (contributions.error){
+        status.textContent = "Updated stats across all repository pages, but contributions could not be fetched (" + contributions.error + "). Existing value was left unchanged.";
+        status.className = "statustext err";
+      } else {
+        status.textContent = "Updated stats across all repository pages, including contributions.";
+        status.className = "statustext ok";
+      }
       render();
     }).catch(function(err){
       status.textContent = "Fetch failed (" + err.message + "). Check the username, or enter stats by hand below.";
@@ -798,6 +1102,17 @@
       scheduleRender();
     });
   }
+
+  function syncColorInputs(){
+    [["pickBg","textBg","bg"],["pickTitlebar","textTitlebar","titlebar"],
+      ["pickTitleText","textTitleText","titleText"],["pickAccent","textAccent","accent"],
+      ["pickHeader","textHeader","header"],["pickLabel","textLabel","label"],
+      ["pickValue","textValue","value"]].forEach(function(pair){
+        $(pair[0]).value = state.colors[pair[2]];
+        $(pair[1]).value = state.colors[pair[2]];
+      });
+  }
+
   bindColorPair("pickBg","textBg","bg");
   bindColorPair("pickTitlebar","textTitlebar","titlebar");
   bindColorPair("pickTitleText","textTitleText","titleText");
@@ -873,6 +1188,11 @@
   $("btnCopyPython").addEventListener("click", function(){ copyText(outPython.value, this); });
   $("btnCopyReadme").addEventListener("click", function(){ copyText(outReadme.value, this); });
   $("btnCopySvg").addEventListener("click", function(){ copyText(outSvg.value, this); });
+  btnDownloadPng.addEventListener("click", downloadPng);
+  selPngScale.addEventListener("change", function(){
+    outConfig.value = serializeConfig();
+    saveAutosave();
+  });
   $("btnCopyConfig").addEventListener("click", function(){ copyText(outConfig.value, this); });
 
   // -- save / load config ------------------------------------------------------
@@ -902,30 +1222,86 @@
     } else {
       throw new Error("ASCII art selection is not valid for the current collection.");
     }
+    state.sharedArtRows = cfg.sharedArtRows === true &&
+      Array.isArray(cfg.asciiArtRows) &&
+      cfg.asciiArtRows.every(function(row){ return typeof row === "string"; });
+    if (state.sharedArtRows) state.asciiArtIndex = -1;
+    if ([1, 2, 3].indexOf(Number(cfg.pngScale)) >= 0) selPngScale.value = String(Number(cfg.pngScale));
     $("inpLogin").value = state.login;
     $("inpRepo").value = state.repo;
     renderFieldsList(); renderPromptList(); renderPalette(); syncAdvancedInputs(); syncAdvancedGlobals();
-    bindColorPair("pickBg","textBg","bg"); bindColorPair("pickTitlebar","textTitlebar","titlebar");
-    bindColorPair("pickTitleText","textTitleText","titleText"); bindColorPair("pickAccent","textAccent","accent");
-    bindColorPair("pickHeader","textHeader","header"); bindColorPair("pickLabel","textLabel","label");
-    bindColorPair("pickValue","textValue","value");
+    syncColorInputs();
 
     if (cfg.avatarDataUrl){
+      state.avatarDataUrl = cfg.avatarDataUrl;
       var img = new Image();
       img.onload = function(){
         avatarImgEl = img;
         asciiRowsFromImage(img).then(function(rows){
-          artRows = rows; state.avatarDataUrl = cfg.avatarDataUrl;
+          artRows = rows; state.avatarDataUrl = cfg.avatarDataUrl; state.sharedArtRows = false;
           avatarThumb.src = cfg.avatarDataUrl; setAvatarUiSet();
           render();
         });
       };
+      img.onerror = function(){
+        avatarImgEl = null;
+        state.avatarDataUrl = null;
+        state.sharedArtRows = false;
+        artRows = currentArtRows();
+        setAvatarUiNone();
+        updateArtStatus();
+        render();
+        setAutosaveStatus("Saved avatar could not be restored. The design was loaded without it.", false);
+      };
       img.src = cfg.avatarDataUrl;
+      artRows = currentArtRows();
+      updateArtStatus();
+      setAvatarUiNone();
+      render();
     } else {
       avatarImgEl = null;
-      state.avatarDataUrl = null; artRows = currentArtRows(); setAvatarUiNone(); updateArtStatus(); render();
+      state.avatarDataUrl = null;
+      artRows = state.sharedArtRows
+        ? cfg.asciiArtRows
+        : Array.isArray(cfg.asciiArtRows) && cfg.asciiArtRows.every(function(row){ return typeof row === "string"; })
+        ? cfg.asciiArtRows
+        : currentArtRows();
+      setAvatarUiNone(); updateArtStatus(); render();
     }
   }
+
+  btnCreateShareLink.addEventListener("click", createShareLink);
+
+  function restoreHistory(from, to){
+    if (!from.length) return;
+    to.push(serializeConfig());
+    var snapshot = from.pop();
+    restoringHistory = true;
+    try {
+      applyConfig(JSON.parse(snapshot));
+      lastHistorySnapshot = serializeConfig();
+      updateHistoryButtons();
+    } catch(err){
+      from.push(snapshot);
+      to.pop();
+      setConfigStatus("Could not restore history: " + err.message, false);
+    } finally {
+      restoringHistory = false;
+    }
+  }
+
+  btnUndo.addEventListener("click", function(){ restoreHistory(undoHistory, redoHistory); });
+  btnRedo.addEventListener("click", function(){ restoreHistory(redoHistory, undoHistory); });
+  window.addEventListener("keydown", function(e){
+    var target = e.target;
+    if (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+    var key = e.key.toLowerCase();
+    var undo = (e.ctrlKey || e.metaKey) && !e.shiftKey && key === "z";
+    var redo = (e.ctrlKey || e.metaKey) && (key === "y" || (e.shiftKey && key === "z"));
+    if (!undo && !redo) return;
+    e.preventDefault();
+    restoreHistory(undo ? undoHistory : redoHistory, undo ? redoHistory : undoHistory);
+  });
 
   $("inpConfigFile").addEventListener("change", function(e){
     var file = e.target.files[0];
@@ -954,14 +1330,12 @@
     $("inpLogin").value = state.login;
     $("inpRepo").value = state.repo;
     $("inpToken").value = "";
+    selPngScale.value = "1";
     setAvatarUiNone();
     updateArtStatus();
     setConfigStatus("");
     renderFieldsList(); renderPromptList(); renderPalette(); syncAdvancedInputs();
-    bindColorPair("pickBg","textBg","bg"); bindColorPair("pickTitlebar","textTitlebar","titlebar");
-    bindColorPair("pickTitleText","textTitleText","titleText"); bindColorPair("pickAccent","textAccent","accent");
-    bindColorPair("pickHeader","textHeader","header"); bindColorPair("pickLabel","textLabel","label");
-    bindColorPair("pickValue","textValue","value");
+    syncColorInputs();
     render();
   });
 
@@ -973,7 +1347,36 @@
   renderFieldsList();
   renderPromptList();
   renderPalette();
-  render();
+  var restoredAutosave = false;
+  var restoredShare = readShareLink();
+  try {
+    if (!restoredShare){
+      var savedConfig = window.localStorage.getItem(AUTOSAVE_KEY);
+      if (savedConfig){
+        applyConfig(JSON.parse(savedConfig));
+        restoredAutosave = true;
+        setAutosaveStatus("Restored your previous design from this device. GitHub token is never saved.", true);
+      }
+    }
+  } catch(err){
+    setAutosaveStatus("Could not restore the saved design: " + err.message + ". Loaded defaults instead.", false);
+    state = defaultState();
+    syncAdvancedGlobals();
+    syncAdvancedInputs();
+    $("inpLogin").value = state.login;
+    $("inpRepo").value = state.repo;
+    $("inpToken").value = "";
+    artRows = asciiRowsDragon();
+    setAvatarUiNone();
+    updateArtStatus();
+    renderFieldsList();
+    renderPromptList();
+    renderPalette();
+    syncColorInputs();
+  }
+  if (!restoredAutosave && !restoredShare) render();
+  lastHistorySnapshot = serializeConfig();
+  updateHistoryButtons();
 
   window.addEventListener("load", function () {
     setTimeout(function () {

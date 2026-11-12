@@ -280,12 +280,21 @@ def fetch_github_stats(login, token):
         stats["followers"] = str(user.get("followers", "N/A"))
         stats["repos"] = str(user.get("public_repos", "N/A"))
 
-        repos_resp = requests.get(
-            f"https://api.github.com/users/{login}/repos?per_page=100&type=owner",
-            headers=headers, timeout=15,
-        )
-        repos_resp.raise_for_status()
-        repos = repos_resp.json()
+        repos = []
+        repos_url = f"https://api.github.com/users/{login}/repos?per_page=100&type=owner"
+        seen_repo_urls = set()
+        while repos_url:
+            if repos_url in seen_repo_urls:
+                raise ValueError("GitHub repository pagination returned a repeated URL")
+            seen_repo_urls.add(repos_url)
+            repos_resp = requests.get(repos_url, headers=headers, timeout=15)
+            repos_resp.raise_for_status()
+            page_repos = repos_resp.json()
+            if not isinstance(page_repos, list):
+                raise ValueError("GitHub repository response was not a list")
+            repos.extend(page_repos)
+            repos_url = repos_resp.links.get("next", {}).get("url")
+
         stats["stars"] = str(sum(r.get("stargazers_count", 0) for r in repos if not r.get("fork")))
 
         lang_count = {}

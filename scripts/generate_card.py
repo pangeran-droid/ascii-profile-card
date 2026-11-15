@@ -400,7 +400,8 @@ def build_svg(art_rows, fields):
     art_svg = "".join(art_lines)
 
     header_svg = (
-        f'<text x="{info_x}" y="{header_y}" class="header">{xml_escape(header_text)}</text>'
+        f'<text x="{info_x}" y="{header_y}" class="header fadein" style="animation-delay:0.35s">'
+        f'{xml_escape(header_text)}</text>'
         f'\n  <line x1="{info_x}" y1="{rule_y}" x2="{info_x + rule_len * 9.4}" y2="{rule_y}" class="rule" />'
     )
 
@@ -469,11 +470,8 @@ def build_svg(art_rows, fields):
       .promptcmd {{ font-family: 'Courier New', monospace; font-size: 15px; fill: {VALUE_COLOR}; white-space: pre; }}
       .promptcursor {{ fill: {ACCENT}; }}
       {prompt_style}
-      .fadein {{ animation-name: reveal; animation-duration: 0.35s; animation-fill-mode: forwards; animation-timing-function: steps(1); }}
-      .typewriter {{ animation-name: reveal; animation-duration: 0.4s; animation-fill-mode: forwards; animation-timing-function: steps(1); }}
-      .swatch {{ animation-name: revealSwatch; animation-duration: 0.35s; animation-fill-mode: forwards; animation-timing-function: steps(1); }}
-      @keyframes reveal {{ 0% {{ opacity: 0; }} 1%, 100% {{ opacity: 1; }} }}
-      @keyframes revealSwatch {{ 0% {{ opacity: 0; }} 1%, 100% {{ opacity: 1; }} }}
+      .fadein, .typewriter, .swatch {{ animation: fadeIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) both; }}
+      @keyframes fadeIn {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
       @keyframes blink {{ 0%, 49% {{ opacity: 1; }} 50%, 100% {{ opacity: 0; }} }}
     </style>
     {prompt_defs}

@@ -426,7 +426,7 @@
       return '\n      <text x="' + PAD + '" y="' + y.toFixed(1) + '" class="art fadein" style="animation-delay:' + delay + 's" textLength="' + Math.max(1, row.length * CELL_W).toFixed(1) + '" lengthAdjust="spacingAndGlyphs" xml:space="preserve">' + xmlEscape(row) + '</text>';
     }).join("");
 
-    var headerSvg = '<text x="' + infoX + '" y="' + headerY + '" class="header">' + xmlEscape(headerText) + '</text>\n  <line x1="' + infoX + '" y1="' + ruleY + '" x2="' + (infoX + ruleLen*9.4) + '" y2="' + ruleY + '" class="rule" />';
+    var headerSvg = '<text x="' + infoX + '" y="' + headerY + '" class="header fadein" style="animation-delay:0.35s">' + xmlEscape(headerText) + '</text>\n  <line x1="' + infoX + '" y1="' + ruleY + '" x2="' + (infoX + ruleLen*9.4) + '" y2="' + ruleY + '" class="rule" />';
 
     var fieldLines = fields.map(function(f, i){
       var y = fieldsStartY + i*FIELD_LINE_H;
@@ -712,7 +712,13 @@
     if (!fields.length) fields = [["", ""]];
     var commands = state.promptCommands.filter(function(c){ return c.trim() !== ""; });
 
-    var svg = buildSvg(artRows.length ? artRows : currentArtRows(), fields, login, state.colors, commands);
+    var svg = buildSvg(artRows.length ? artRows : currentArtRows(), fields, login, state.colors, commands).replace(
+      "</style>",
+      "      .fadein, .typewriter, .swatch { animation: fadeIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) both; }\n" +
+      "      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }\n" +
+      "      @media (prefers-reduced-motion: reduce) { .fadein, .typewriter, .swatch { animation: none; opacity: 1; } }\n" +
+      "    </style>"
+    );
     $("svgHost").parentNode.classList.toggle("native-art-size", state.asciiArtIndex >= 0);
     svgHost.innerHTML = svg;
     outSvg.value = svg;
